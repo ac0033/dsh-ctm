@@ -4,6 +4,8 @@
 
 把模型的「上下文」变成可见、可编辑、可评分的一等对象，作为 DeepSeek Harness 的自包含 bundle 插件发布。
 
+![「上下文」标签页：MECE token 口径的 KPI 栏、用户输入与系统提示词面板](docs/screenshot-context-tab.png)
+
 ## 特性
 
 - **完整可见**：轮次 → 片段的流程图，按角色 / token / 缓存 / 有效性着色，markdown 渲染、分页。

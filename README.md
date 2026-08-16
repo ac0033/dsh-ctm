@@ -4,6 +4,8 @@ English | [中文](README-zh.md)
 
 Turns the model's context into a visible, editable, effectiveness-scored first-class object, published as a self-contained bundle plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
 
+![The Context tab: KPI strip with MECE token buckets, user input and system prompt panels](docs/screenshot-context-tab.png)
+
 ## Features
 
 - **Full visibility**: a turn → segment flow view colored by role / tokens / cache status / effectiveness, with markdown rendering and paging.
