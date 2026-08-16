@@ -30,6 +30,7 @@
 - **编辑生效路径**：编辑排队 → `agent/pre-step` 钩子落 surface `replace` 事件。不要用 llm/stream 拦截器改写请求（那是不落日志的红线行为）。
 - **系统提示词**走 `system-prompt/assemble` 钩子，不走 surface 替换。
 - **删除是 shadow**：replace 事件用占位节点占据被 shadow 的区间，日志保留所以可撤销。删 tool 结果必须用最小平衡区间（`minimalBalancedRange`）把携带 tool-call 的 assistant 消息一起吸收，否则模型看到悬空调用。
+- **平衡区间会重叠**：同一条 assistant 消息携带多个 tool-call 时，删其中任一结果，区间会把兄弟结果一起吸收。所以 flush 必须是幂等的——目标已不在表面（被同批前序组或宿主 compaction shadow）的删除视为已满足，不能报错；入队时的 planEdit 校验通过不代表 flush 时目标还在。
 - **角色降格**：日志 append-only，撤销回退/配对删除时内容只能以 user/message 身份恢复（第一条 replace 进占位、其余 append 补尾）。这是已知限制，README 有说明。
 - **usage 口径**：三个桶互斥——未命中输入 / 缓存命中输入 / 输出，reasoning 是 output 的子集不单独计。优先读 tokenUsage 投影，事件折叠做兜底。
 - **cordis 服务访问守卫**：Context 代理对「未在 inject 声明的服务属性」的读取直接抛 `cannot get property "X" without inject`——可选链救不了，抛错发生在属性访问时。可选服务的官方模式是 `ctx.inject(['service'], child => ...)` 子上下文（参考 dsh-goal）：服务存在才激活回调。教训：单测里的普通对象假 ctx 不会抛错，这类 bug 单测抓不到，`tests/helpers/fake-ctx.ts` 的 `cordisInjectGuard` 专门模拟这个守卫做回归。
@@ -49,6 +50,7 @@
 - v4：步骤行去重数字
 - v5：沙箱验证（最小平衡区间删除、可撤销回退、expectedVersion 并发保护、集成测试 8 场景）
 - v6：修复加载崩溃（sessionProjections 未声明 inject 被 cordis 守卫拦截）；可选服务改走 ctx.inject 子上下文 + 守卫回归测试
+- v7：批量删除兄弟 tool 结果不再报 target_not_on_surface（flush 幂等化）
 
 ## 已知遗留
 
