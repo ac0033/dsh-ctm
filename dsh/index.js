@@ -15392,10 +15392,14 @@ function apply(ctx) {
     }
     return { segments, model };
   }
+  let projectionRegistry;
+  ctx.inject(["sessionProjections"], (scope) => {
+    projectionRegistry = scope.sessionProjections;
+  });
   async function readUsageInfo(sessionId) {
     const live = liveSession(sessionId);
     const info = { ...NO_USAGE };
-    const registry2 = ctx.sessionProjections;
+    const registry2 = projectionRegistry;
     if (live !== void 0 && registry2?.snapshot !== void 0) {
       try {
         const values = registry2.snapshot(live).values ?? {};

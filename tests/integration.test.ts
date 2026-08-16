@@ -395,3 +395,23 @@ describe('integration: mixed sequence of applied edits', () => {
     expect(st.applyError).toBeNull()
   })
 })
+
+describe('integration: cordis inject guard (regression)', () => {
+  // The real cordis Context proxy throws on any read of a service the plugin
+  // did not declare in `inject` — optional chaining does not help, the throw
+  // happens at property-get time. The usage reader once touched
+  // `ctx.sessionProjections` directly and the plugin died with
+  // `cannot get property "sessionProjections" without inject` on load;
+  // the service is now reached through an `ctx.inject` child context.
+  it('loads and serves getState under a proxy that throws on undeclared service access', async () => {
+    const s = new FakeSession('s1')
+    plainTurn(s, 1, 'hello', 'answer one')
+    const h = createHarness([s], { cordisGuard: true })
+    const state = await stateOf(h, 's1')
+    expect(state.applyError).toBeNull()
+    expect(state.segments.length).toBeGreaterThan(0)
+    // The usage read path ran to completion without touching the (absent,
+    // undeclared) projection service; the fixtures carry no usage data.
+    expect(state.summary.usageSource).toBe('none')
+  })
+})

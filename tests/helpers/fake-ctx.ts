@@ -4,9 +4,11 @@
  * handler, an `ctx.on` registry whose agent/pre-step waterfall flushes the
  * edit queue, and a logger. Only the surface host.ts actually touches is
  * implemented — `tokenMeter` and `sessionProjections` stay absent on purpose
- * (the host optional-chains both).
+ * (tokenMeter is optional-chained; sessionProjections is reached through an
+ * `ctx.inject(['sessionProjections'])` child that never activates without
+ * the service, so reads exercise the event-fold fallback).
  */
-import { apply } from '../../src/host'
+import { apply, inject } from '../../src/host'
 import type { CtmResponse } from '../../src/contract'
 import type { FakeSession } from './fake-session'
 
@@ -26,7 +28,29 @@ export interface Harness {
   warnings: string[]
 }
 
-export function createHarness(sessions: FakeSession[]): Harness {
+/**
+ * Reproduce cordis's service-access guard: the real Context proxy throws
+ * `cannot get property "<name>" without inject` on ANY read of a service the
+ * plugin did not declare — optional chaining does NOT save you, the throw
+ * happens at property-get time. Declared services (the host's inject list)
+ * read as undefined when absent; cordis built-ins (logger/on/inject) are
+ * always reachable. Wrap the fake ctx in this to regression-test that the
+ * host never touches an undeclared service.
+ */
+export function cordisInjectGuard<T extends object>(ctx: T, declaredInject: string[]): T {
+  const builtins = new Set(['logger', 'on', 'inject', 'then'])
+  const declared = new Set(declaredInject)
+  return new Proxy(ctx, {
+    get(target, prop, receiver) {
+      if (typeof prop === 'string' && !(prop in target) && !builtins.has(prop) && !declared.has(prop)) {
+        throw new Error(`cannot get property "${prop}" without inject`)
+      }
+      return Reflect.get(target, prop, receiver)
+    },
+  })
+}
+
+export function createHarness(sessions: FakeSession[], opts?: { cordisGuard?: boolean }): Harness {
   const sessionMap = new Map(sessions.map(s => [s.id, s]))
   const listeners = new Map<string, ((payload: unknown, next: () => unknown) => unknown)[]>()
   const routes: FakeRoute[] = []
@@ -45,8 +69,14 @@ export function createHarness(sessions: FakeSession[]): Harness {
       list.push(fn)
       listeners.set(name, list)
     },
-    inject(_deps: string[], cb: (scope: unknown) => unknown): void {
-      cb({ webServer })
+    // cordis semantics: the child context activates only when every declared
+    // dependency is composed. sessionProjections is absent here, so the
+    // host's optional projection child never runs and reads exercise the
+    // event-fold fallback.
+    inject(deps: string[], cb: (scope: unknown) => unknown): void {
+      const services: Record<string, unknown> = { webServer }
+      if (!deps.every(d => services[d] !== undefined)) return
+      cb(Object.fromEntries(deps.map(d => [d, services[d]])))
     },
     sessions: { get: (id: string) => sessionMap.get(id) },
     sessionQuery: {
@@ -58,7 +88,7 @@ export function createHarness(sessions: FakeSession[]): Harness {
       readSession: (id: string) => Promise.resolve({ events: sessionMap.get(id)?.events ?? [] }),
     },
   }
-  apply(ctx)
+  apply(opts?.cordisGuard === true ? cordisInjectGuard(ctx, inject) : ctx)
 
   async function post(body: unknown): Promise<{ status: number; json: CtmResponse }> {
     const route = routes.find(r => r.path === '/ctm')

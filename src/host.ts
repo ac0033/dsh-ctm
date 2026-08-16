@@ -389,20 +389,31 @@ export function apply(ctx: any): void {
     return { segments, model }
   }
 
+  // The projection registry is an OPTIONAL service: assemblies without
+  // dsh-session-projection never compose it. cordis guards service access
+  // through the Context proxy — reading an undeclared property throws
+  // `cannot get property ... without inject` even under optional chaining,
+  // so the registry must NOT be touched through `ctx` directly. The
+  // sanctioned optional-dependency pattern (see dsh-goal) is a child
+  // context via ctx.inject: the callback runs only once the service is
+  // composed, otherwise the registry stays undefined and reads fall back.
+  let projectionRegistry: { snapshot?: (s: unknown) => { values?: Record<string, unknown> } } | undefined
+  ctx.inject(['sessionProjections'], (scope: any) => {
+    projectionRegistry = scope.sessionProjections
+  })
+
   /**
    * Session-level usage totals. Preferred path: the host's `tokenUsage`
    * session projection, read synchronously through
-   * `ctx.sessionProjections.snapshot(liveSession)` — incremental over the
+   * `sessionProjections.snapshot(liveSession)` — incremental over the
    * complete durable log, so compaction/shadowing cannot drop a request.
    * Fallback: fold the full log ourselves (the live session's in-memory
-   * events, else `readSession()`); correct but O(log) on every read. The
-   * registry is touched by optional chaining only — it is NOT in `inject`,
-   * so assemblies without dsh-session-projection still load the plugin.
+   * events, else `readSession()`); correct but O(log) on every read.
    */
   async function readUsageInfo(sessionId: string): Promise<UsageInfo> {
     const live = liveSession(sessionId)
     const info: UsageInfo = { ...NO_USAGE }
-    const registry = (ctx as { sessionProjections?: { snapshot?: (s: unknown) => { values?: Record<string, unknown> } } }).sessionProjections
+    const registry = projectionRegistry
     if (live !== undefined && registry?.snapshot !== undefined) {
       try {
         const values = registry.snapshot(live).values ?? {}
