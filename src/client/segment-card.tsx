@@ -4,6 +4,7 @@
  * colored badge), cache is a neutral badge with a ✓/✗ glyph, and the action
  * buttons stay subtle so they never compete with the content.
  */
+import { useState } from 'react'
 import type { CtmSegment } from '../contract'
 import type { Shared } from './shared'
 import { renderMarkdown } from './markdown'
@@ -50,6 +51,14 @@ export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
   const isReadOnly = isSystem || seg.protected === true
   const isUserInput = seg.role === 'user' && seg.source === 'user_input'
   const isEditing = sh.editing?.id === seg.id
+  // Copy feedback is local and transient; clipboard failures degrade to no feedback.
+  const [copied, setCopied] = useState(false)
+  const copyContent = () => {
+    void navigator.clipboard?.writeText(seg.content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }).catch(() => {})
+  }
   const eff = seg.effectiveness || 'effective'
   const thinkOpen = sh.isOpen('think', seg.id)
 
@@ -77,6 +86,10 @@ export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
       )}
       <ToolCalls seg={seg} sh={sh} />
       <div className="ctm-actions">
+        {/* Copy stays available on read-only segments: it is the manual path
+            for re-sending a rolled-back message (the host chat UI owns the
+            input box; a plugin cannot refill it). */}
+        <button type="button" className="ctm-btn subtle" disabled={copied} onClick={copyContent}>{copied ? t('copied') : t('copy')}</button>
         {!isReadOnly && seg.role !== 'tool' && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index })}>{t('replace')}</button>}
         {seg.id === 'seg-system' && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index })}>{t('replace')}</button>}
         {!isReadOnly && <button type="button" className="ctm-btn subtle danger" disabled={sh.busy} onClick={() => sh.askConfirm('delete', { segmentId: seg.id })}>{t('delete')}</button>}

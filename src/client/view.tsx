@@ -216,7 +216,12 @@ export function CtmView(props: CtmApi & { sessionId?: string; useSession?: (sel:
         <div>
           <div className="ctm-section-title">{`${t('rolledBackSection')}（${sum.rolledBackCount}）`}</div>
           {showRolledBack
-            ? <div>{recoveredSegments.filter(s => s.rolledBack).map(seg => <SegmentCard key={seg.id} seg={seg} sh={sh} />)}</div>
+            ? (
+              <div>
+                <div>{recoveredSegments.filter(s => s.rolledBack).map(seg => <SegmentCard key={seg.id} seg={seg} sh={sh} />)}</div>
+                <button type="button" className="ctm-btn subtle" onClick={() => setShowRolledBack(false)}>{t('collapse')}</button>
+              </div>
+            )
             : <button type="button" className="ctm-btn subtle" onClick={() => setShowRolledBack(true)}>{t('showRolledBack')}</button>}
         </div>
       )}

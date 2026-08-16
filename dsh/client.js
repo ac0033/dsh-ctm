@@ -153,6 +153,8 @@ var zh = {
   step: "\u6B65\u9AA4",
   expand: "\u5C55\u5F00",
   collapse: "\u6536\u8D77",
+  copy: "\u590D\u5236",
+  copied: "\u5DF2\u590D\u5236",
   thinking: "\u601D\u8003\u8FC7\u7A0B",
   toolCalls: "\u4E2A\u5DE5\u5177\u8C03\u7528",
   toolResults: "\u4E2A\u5DE5\u5177\u7ED3\u679C",
@@ -314,6 +316,8 @@ var en = {
   step: "Step",
   expand: "Expand",
   collapse: "Collapse",
+  copy: "Copy",
+  copied: "Copied",
   thinking: "Thinking",
   toolCalls: "tool calls",
   toolResults: "tool results",
@@ -444,7 +448,7 @@ var en = {
 };
 
 // src/client/view.tsx
-var import_react2 = require("react");
+var import_react3 = require("react");
 
 // src/client/model.ts
 function recoverTurns(segments) {
@@ -845,6 +849,9 @@ function renderMarkdown(text) {
   return out.length ? out : [/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ctm-md-p", children: text }, "fallback")];
 }
 
+// src/client/segment-card.tsx
+var import_react2 = require("react");
+
 // src/client/text.ts
 function unescapeText(s) {
   if (!s) return s;
@@ -888,6 +895,14 @@ function SegmentCard({ seg, sh }) {
   const isReadOnly = isSystem || seg.protected === true;
   const isUserInput = seg.role === "user" && seg.source === "user_input";
   const isEditing = sh.editing?.id === seg.id;
+  const [copied, setCopied] = (0, import_react2.useState)(false);
+  const copyContent = () => {
+    void navigator.clipboard?.writeText(seg.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {
+    });
+  };
   const eff = seg.effectiveness || "effective";
   const thinkOpen = sh.isOpen("think", seg.id);
   const head = [
@@ -907,6 +922,7 @@ function SegmentCard({ seg, sh }) {
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ToolCalls, { seg, sh }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-actions", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: copied, onClick: copyContent, children: copied ? t("copied") : t("copy") }),
       !isReadOnly && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
       seg.id === "seg-system" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
       !isReadOnly && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle danger", disabled: sh.busy, onClick: () => sh.askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
@@ -1076,40 +1092,40 @@ var PAGE_SIZE = 2;
 var stateCache = /* @__PURE__ */ new Map();
 function CtmView(props) {
   const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession } = props;
-  const [lang, setLang] = (0, import_react2.useState)("en");
-  const [state, setState] = (0, import_react2.useState)(null);
-  const [loading, setLoading] = (0, import_react2.useState)(true);
-  const [error51, setError] = (0, import_react2.useState)(null);
+  const [lang, setLang] = (0, import_react3.useState)("en");
+  const [state, setState] = (0, import_react3.useState)(null);
+  const [loading, setLoading] = (0, import_react3.useState)(true);
+  const [error51, setError] = (0, import_react3.useState)(null);
   const expansion = useExpansion();
-  const [explainHover, setExplainHover] = (0, import_react2.useState)(null);
-  const [legendHover, setLegendHover] = (0, import_react2.useState)(false);
-  const [page, setPage] = (0, import_react2.useState)(0);
-  const [editing, setEditing] = (0, import_react2.useState)(null);
-  const [confirmOp, setConfirmOp] = (0, import_react2.useState)(null);
-  const [busy, setBusy] = (0, import_react2.useState)(false);
-  const [showSnap, setShowSnap] = (0, import_react2.useState)(false);
-  const [showTrash, setShowTrash] = (0, import_react2.useState)(false);
-  const inFlightRef = (0, import_react2.useRef)(false);
-  const pendingRefreshRef = (0, import_react2.useRef)(false);
-  const lastVersionRef = (0, import_react2.useRef)(0);
-  const editingRef = (0, import_react2.useRef)(editing);
-  (0, import_react2.useEffect)(() => {
+  const [explainHover, setExplainHover] = (0, import_react3.useState)(null);
+  const [legendHover, setLegendHover] = (0, import_react3.useState)(false);
+  const [page, setPage] = (0, import_react3.useState)(0);
+  const [editing, setEditing] = (0, import_react3.useState)(null);
+  const [confirmOp, setConfirmOp] = (0, import_react3.useState)(null);
+  const [busy, setBusy] = (0, import_react3.useState)(false);
+  const [showSnap, setShowSnap] = (0, import_react3.useState)(false);
+  const [showTrash, setShowTrash] = (0, import_react3.useState)(false);
+  const inFlightRef = (0, import_react3.useRef)(false);
+  const pendingRefreshRef = (0, import_react3.useRef)(false);
+  const lastVersionRef = (0, import_react3.useRef)(0);
+  const editingRef = (0, import_react3.useRef)(editing);
+  (0, import_react3.useEffect)(() => {
     editingRef.current = editing;
   }, [editing]);
-  const [showRolledBack, setShowRolledBack] = (0, import_react2.useState)(false);
-  const [minimized, setMinimized] = (0, import_react2.useState)(false);
+  const [showRolledBack, setShowRolledBack] = (0, import_react3.useState)(false);
+  const [minimized, setMinimized] = (0, import_react3.useState)(false);
   const nodeCount = useSession ? useSession((s) => s?.chat?.legacy?.nodes?.length ?? 0) : 0;
   const running = useSession ? useSession((s) => !!s?.running) : false;
   const dict = lang === "zh" ? zh : en;
-  const t = (0, import_react2.useCallback)((k) => dict[k] ?? en[k] ?? k, [dict]);
-  const applyState = (0, import_react2.useCallback)((s) => {
+  const t = (0, import_react3.useCallback)((k) => dict[k] ?? en[k] ?? k, [dict]);
+  const applyState = (0, import_react3.useCallback)((s) => {
     if (s.version < lastVersionRef.current) return false;
     lastVersionRef.current = s.version;
     if (sessionId) stateCache.set(sessionId, s);
     setState(s);
     return true;
   }, [sessionId]);
-  const load = (0, import_react2.useCallback)(async (silent) => {
+  const load = (0, import_react3.useCallback)(async (silent) => {
     if (inFlightRef.current) {
       pendingRefreshRef.current = true;
       return;
@@ -1131,7 +1147,7 @@ function CtmView(props) {
       }
     }
   }, [getState, applyState]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     const cached2 = sessionId ? stateCache.get(sessionId) : void 0;
     lastVersionRef.current = cached2?.version ?? 0;
     if (cached2) {
@@ -1140,11 +1156,11 @@ function CtmView(props) {
     }
     void load(cached2 !== void 0);
   }, [sessionId]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     if (state === null) return;
     void load(true);
   }, [sessionId, nodeCount, running]);
-  const run = (0, import_react2.useCallback)(async (fn) => {
+  const run = (0, import_react3.useCallback)(async (fn) => {
     setBusy(true);
     setError(null);
     try {
@@ -1156,8 +1172,8 @@ function CtmView(props) {
       setBusy(false);
     }
   }, [applyState]);
-  const askConfirm = (0, import_react2.useCallback)((name, args) => setConfirmOp({ name, args }), []);
-  const execOp = (0, import_react2.useCallback)((name, args) => {
+  const askConfirm = (0, import_react3.useCallback)((name, args) => setConfirmOp({ name, args }), []);
+  const execOp = (0, import_react3.useCallback)((name, args) => {
     if (name === "replace") void run(() => replace(args.segmentId, args.content));
     else if (name === "delete") void run(() => deleteSegment(args.segmentId));
     else if (name === "rollback") void run(() => rollback(args.turnIndex));
@@ -1167,8 +1183,8 @@ function CtmView(props) {
     else if (name === "override") void run(() => override(args.segmentId, args.value));
     else if (name === "setRealtime") void run(() => setRealtime(true));
   }, [run, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime]);
-  const recoveredSegments = (0, import_react2.useMemo)(() => state ? recoverTurns(state.segments) : [], [state]);
-  const nodes = (0, import_react2.useMemo)(() => state ? groupNodes(recoveredSegments) : [], [state, recoveredSegments]);
+  const recoveredSegments = (0, import_react3.useMemo)(() => state ? recoverTurns(state.segments) : [], [state]);
+  const nodes = (0, import_react3.useMemo)(() => state ? groupNodes(recoveredSegments) : [], [state, recoveredSegments]);
   const totalPages = Math.max(1, Math.ceil(nodes.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageNodes = nodes.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -1243,7 +1259,10 @@ function CtmView(props) {
     /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-flow", children: pageNodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(TurnNode, { node, sh }, node.key)) }),
     (sum.rolledBackCount ?? 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-section-title", children: `${t("rolledBackSection")}\uFF08${sum.rolledBackCount}\uFF09` }),
-      showRolledBack ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { children: recoveredSegments.filter((s) => s.rolledBack).map((seg) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SegmentCard, { seg, sh }, seg.id)) }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => setShowRolledBack(true), children: t("showRolledBack") })
+      showRolledBack ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { children: recoveredSegments.filter((s) => s.rolledBack).map((seg) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SegmentCard, { seg, sh }, seg.id)) }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => setShowRolledBack(false), children: t("collapse") })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => setShowRolledBack(true), children: t("showRolledBack") })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Editor, { sh }),
     confirmOp && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ConfirmModal, { sh, op: confirmOp, onClose: () => setConfirmOp(null), onExec: execOp })
