@@ -51,6 +51,7 @@
 - v5：沙箱验证（最小平衡区间删除、可撤销回退、expectedVersion 并发保护、集成测试 8 场景）
 - v6：修复加载崩溃（sessionProjections 未声明 inject 被 cordis 守卫拦截）；可选服务改走 ctx.inject 子上下文 + 守卫回归测试
 - v7：批量删除兄弟 tool 结果不再报 target_not_on_surface（flush 幂等化）
+- v8：CTM 占位消息归类修正（识别 source.plugin === 'ctm'，归用户输入栏 + protected 只读，不再混入系统提示词栏）
 
 ## 已知遗留
 
