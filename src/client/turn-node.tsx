@@ -33,20 +33,26 @@ function StepSection({ step, sh }: { step: StepGroup; sh: Shared }) {
   const segs = step.segments
   const assistant = segs.filter(s => s.role === 'assistant')
   const tools = segs.filter(s => s.role === 'tool')
-  const other = segs.filter(s => s.role !== 'assistant' && s.role !== 'tool')
   const open = sh.isOpen('steps', step.key)
   const baseLabel = step.sourceKind ? sourceKindLabel(t, segs[0]!) : roleLabel(t, step.label)
-  const label = step.num != null ? `${baseLabel} ${step.num}` : (step.label.startsWith('step-') ? `${t('step')} ${step.label.slice(5)}` : baseLabel)
+  // Flat steps (user/system nodes) are synthetic one-segment groups: their
+  // segment counts are always 1, so the only numbers worth showing are the
+  // group ordinal (left, muted) and the consuming turn (right). Real turn
+  // steps keep their composition counts (1 assistant · N tool results).
+  const flat = step.num != null
+  const label = step.num != null
+    ? <>{baseLabel} <span className="ctm-node-sub">{step.num}</span></>
+    : (step.label.startsWith('step-') ? `${t('step')} ${step.label.slice(5)}` : baseLabel)
   // The step's single LLM request, provider-measured (the assistant segment
   // carries its usage); null until any segment reports usage.
   const stepUsage = sumSegmentUsage(segs)
   return (
     <div className="ctm-step">
       <div className="ctm-step-head" onClick={() => sh.toggle('steps', step.key)}>
-        <span>{(open ? '▾ ' : '▸ ') + label}{assistant.length ? ` · ${assistant.length} ${t('assistant')}` : ''}{tools.length ? ` · ${tools.length} ${t('toolResults')}` : ''}{other.length ? ` · ${other.length}` : ''}</span>
-        <span className="ctm-node-sub">{stepUsage && <span title={t('stepUsageTip')}>{usageLine(t, stepUsage, false)}{' · '}</span>}{step.turn != null ? <span className="ctm-turn-label">{`${t('turn')} ${step.turn}`}</span> : null}{' '}{segs.length} {t('seg')}</span>
+        <span>{(open ? '▾ ' : '▸ ')}{label}{!flat && assistant.length ? ` · ${assistant.length} ${t('assistant')}` : ''}{!flat && tools.length ? ` · ${tools.length} ${t('toolResults')}` : ''}</span>
+        <span className="ctm-node-sub">{stepUsage && <span title={t('stepUsageTip')}>{usageLine(t, stepUsage, false)}{' · '}</span>}{step.turn != null ? <span className="ctm-turn-label">{`${t('turn')} ${step.turn}`}</span> : null}{!flat && ` ${segs.length} ${t('seg')}`}</span>
       </div>
-      {open && <div>{[...other, ...assistant, ...tools].map(seg => <SegmentCard key={seg.id} seg={seg} sh={sh} />)}</div>}
+      {open && <div>{[...segs.filter(s => s.role !== 'assistant' && s.role !== 'tool'), ...assistant, ...tools].map(seg => <SegmentCard key={seg.id} seg={seg} sh={sh} />)}</div>}
     </div>
   )
 }

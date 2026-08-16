@@ -962,18 +962,22 @@ function StepSection({ step, sh }) {
   const segs = step.segments;
   const assistant = segs.filter((s) => s.role === "assistant");
   const tools = segs.filter((s) => s.role === "tool");
-  const other = segs.filter((s) => s.role !== "assistant" && s.role !== "tool");
   const open = sh.isOpen("steps", step.key);
   const baseLabel = step.sourceKind ? sourceKindLabel(t, segs[0]) : roleLabel(t, step.label);
-  const label = step.num != null ? `${baseLabel} ${step.num}` : step.label.startsWith("step-") ? `${t("step")} ${step.label.slice(5)}` : baseLabel;
+  const flat = step.num != null;
+  const label = step.num != null ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+    baseLabel,
+    " ",
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "ctm-node-sub", children: step.num })
+  ] }) : step.label.startsWith("step-") ? `${t("step")} ${step.label.slice(5)}` : baseLabel;
   const stepUsage = sumSegmentUsage(segs);
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step", children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step-head", onClick: () => sh.toggle("steps", step.key), children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
-        (open ? "\u25BE " : "\u25B8 ") + label,
-        assistant.length ? ` \xB7 ${assistant.length} ${t("assistant")}` : "",
-        tools.length ? ` \xB7 ${tools.length} ${t("toolResults")}` : "",
-        other.length ? ` \xB7 ${other.length}` : ""
+        open ? "\u25BE " : "\u25B8 ",
+        label,
+        !flat && assistant.length ? ` \xB7 ${assistant.length} ${t("assistant")}` : "",
+        !flat && tools.length ? ` \xB7 ${tools.length} ${t("toolResults")}` : ""
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { className: "ctm-node-sub", children: [
         stepUsage && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { title: t("stepUsageTip"), children: [
@@ -981,13 +985,10 @@ function StepSection({ step, sh }) {
           " \xB7 "
         ] }),
         step.turn != null ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "ctm-turn-label", children: `${t("turn")} ${step.turn}` }) : null,
-        " ",
-        segs.length,
-        " ",
-        t("seg")
+        !flat && ` ${segs.length} ${t("seg")}`
       ] })
     ] }),
-    open && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: [...other, ...assistant, ...tools].map((seg) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SegmentCard, { seg, sh }, seg.id)) })
+    open && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: [...segs.filter((s) => s.role !== "assistant" && s.role !== "tool"), ...assistant, ...tools].map((seg) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SegmentCard, { seg, sh }, seg.id)) })
   ] });
 }
 function TurnNode({ node, sh }) {
