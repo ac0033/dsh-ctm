@@ -1,0 +1,4 @@
+# dsh bundle layer: mount the CTM plugin (dsh/index.js via the package root export).
+- insert:
+    - id: ctm
+      name: '@deepseek-ai/dsh-ctm'

@@ -1,0 +1,41 @@
+{
+  "name": "@deepseek-ai/dsh-ctm",
+  "version": "0.1.0",
+  "description": "Context Transparency Manager: the model context as a visible, editable, effectiveness-scored surface (self-contained dsh bundle plugin)",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dsh/index.js",
+    "./client": "./dsh/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dsh/index.js",
+    "dsh/client.js",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
+  }
+}
