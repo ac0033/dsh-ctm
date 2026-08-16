@@ -415,3 +415,51 @@ describe('integration: cordis inject guard (regression)', () => {
     expect(state.summary.usageSource).toBe('none')
   })
 })
+
+describe('integration: deleting sibling tool results in one batch', () => {
+  // Two tool results carried by ONE assistant message share a single minimal
+  // balanced range: the first delete shadows [call-message, r1, r2] whole.
+  // The second delete's target is then already off the surface — its intent
+  // is satisfied, so it must NOT surface target_not_on_surface.
+  it('shadows the overlapping call range once; the absorbed sibling delete reports no error', async () => {
+    const s = new FakeSession('s1')
+    plainTurn(s, 1, 'start', 'a1')
+    s.append('turn/start', { turn: 2 })
+    s.append('step/start', { turn: 2, step: 1 })
+    s.append('assistant/message', assistantData(2, 1, 'calling tools', [{ id: 'c1', name: 'bash' }, { id: 'c2', name: 'bash' }]), { surfaceOp: 'append' })
+    s.append('tool/call', { turn: 2, step: 1, callId: 'c1', name: 'bash', arguments: {} })
+    s.append('tool/result', toolResultData(2, 1, 'c1', 'out one'), { surfaceOp: 'append' })
+    s.append('tool/call', { turn: 2, step: 1, callId: 'c2', name: 'bash', arguments: {} })
+    s.append('tool/result', toolResultData(2, 1, 'c2', 'out two'), { surfaceOp: 'append' })
+    s.append('step/end', { turn: 2, step: 1 })
+    s.append('turn/end', { turn: 2 })
+    const h = createHarness([s])
+    await h.post({ op: 'setRealtime', sessionId: 's1', enabled: true })
+
+    const st = await stateOf(h, 's1')
+    const r1 = findSeg(st, seg => seg.content === 'out one')
+    const r2 = findSeg(st, seg => seg.content === 'out two')
+    expect(await noticeOf(h, { op: 'delete', sessionId: 's1', segmentId: r1.id }))
+      .toEqual({ kind: 'ok', code: 'deleted_queued' })
+    expect(await noticeOf(h, { op: 'delete', sessionId: 's1', segmentId: r2.id }))
+      .toEqual({ kind: 'ok', code: 'deleted_queued' })
+
+    await h.flush(s)
+    // No dangling call, no spurious failure: the single placeholder occupies
+    // the whole shadowed range and both results are gone for the model.
+    expect(texts(s)).toEqual([
+      'start',
+      'a1',
+      '[CTM] A tool context segment was removed by the user.',
+    ])
+    expect(logRetains(s, 'out one')).toBe(true)
+    expect(logRetains(s, 'out two')).toBe(true)
+    const after = await stateOf(h, 's1')
+    expect(after.applyError).toBeNull()
+
+    // Undo restores the whole absorbed range (role-demoted), not just r1.
+    expect(await noticeOf(h, { op: 'undo', sessionId: 's1' })).toEqual({ kind: 'ok', code: 'undone_queued' })
+    await h.flush(s)
+    expect(texts(s)).toEqual(['start', 'a1', 'calling tools', 'out one', 'out two'])
+  })
+})

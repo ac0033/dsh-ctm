@@ -15578,9 +15578,16 @@ function apply(ctx) {
         if (applied !== null && applied.undoable) st.appliedEdits.push(applied);
         st.lastApplyError = null;
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg);
-        st.lastApplyError = msg;
+        const edit = group.edits[0];
+        const alreadyShadowed = e instanceof EditPlanError && e.code === "target_not_on_surface" && edit !== void 0 && edit.kind === "delete" && eventBySeq(session, edit.seq) !== void 0 && !session.surface.nodes.includes(edit.seq);
+        if (alreadyShadowed) {
+          logger.warn(`[ctm] queued delete of seq ${String(edit.seq)} was already shadowed; treating as applied`);
+          st.lastApplyError = null;
+        } else {
+          const msg = e instanceof Error ? e.message : String(e);
+          logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg);
+          st.lastApplyError = msg;
+        }
       } finally {
         releaseViewMutations(st, group);
       }

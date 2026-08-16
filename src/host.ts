@@ -602,9 +602,24 @@ export function apply(ctx: any): void {
         if (applied !== null && applied.undoable) st.appliedEdits.push(applied)
         st.lastApplyError = null
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg)
-        st.lastApplyError = msg
+        // Idempotency: a delete whose target is already off the surface has
+        // its intent satisfied — the target was shadowed by an earlier group
+        // in this same flush (sibling tool results share one minimal balanced
+        // range) or by host compaction. The base read excludes shadowed nodes,
+        // so releasing the view mutation below leaves the view consistent;
+        // there is nothing to error about.
+        const edit = group.edits[0]
+        const alreadyShadowed = e instanceof EditPlanError && e.code === 'target_not_on_surface'
+          && edit !== undefined && edit.kind === 'delete'
+          && eventBySeq(session, edit.seq) !== undefined && !session.surface.nodes.includes(edit.seq)
+        if (alreadyShadowed) {
+          logger.warn(`[ctm] queued delete of seq ${String((edit as { seq: number }).seq)} was already shadowed; treating as applied`)
+          st.lastApplyError = null
+        } else {
+          const msg = e instanceof Error ? e.message : String(e)
+          logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg)
+          st.lastApplyError = msg
+        }
       } finally {
         releaseViewMutations(st, group)
       }
