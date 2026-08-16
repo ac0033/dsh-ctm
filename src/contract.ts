@@ -161,17 +161,25 @@ export const ctmStateSchema = z.object({
 })
 export type CtmState = z.infer<typeof ctmStateSchema>
 
+/**
+ * Optimistic-concurrency token a mutating request may carry: the `version` of
+ * the last state the caller applied. The host rejects the request with a
+ * `stale_version` notice (no side effects) when another request landed in
+ * between. Optional so older clients keep working unchecked.
+ */
+const expectedVersion = { expectedVersion: z.number().int().nonnegative().optional() }
+
 /** One host operation request. `op` discriminates the argument set. */
 export const ctmRequestSchema = z.discriminatedUnion('op', [
-  z.object({ op: z.literal('getState'), sessionId: z.string() }),
-  z.object({ op: z.literal('replace'), sessionId: z.string(), segmentId: z.string(), content: z.string() }),
-  z.object({ op: z.literal('delete'), sessionId: z.string(), segmentId: z.string() }),
-  z.object({ op: z.literal('rollback'), sessionId: z.string(), turnIndex: z.number().int().nonnegative() }),
-  z.object({ op: z.literal('restore'), sessionId: z.string(), snapshotId: z.string() }),
-  z.object({ op: z.literal('reset'), sessionId: z.string() }),
-  z.object({ op: z.literal('undo'), sessionId: z.string() }),
-  z.object({ op: z.literal('override'), sessionId: z.string(), segmentId: z.string(), value: z.string().nullable() }),
-  z.object({ op: z.literal('setRealtime'), sessionId: z.string(), enabled: z.boolean() }),
+  z.object({ op: z.literal('getState'), sessionId: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('replace'), sessionId: z.string(), segmentId: z.string(), content: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('delete'), sessionId: z.string(), segmentId: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('rollback'), sessionId: z.string(), turnIndex: z.number().int().nonnegative(), ...expectedVersion }),
+  z.object({ op: z.literal('restore'), sessionId: z.string(), snapshotId: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('reset'), sessionId: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('undo'), sessionId: z.string(), ...expectedVersion }),
+  z.object({ op: z.literal('override'), sessionId: z.string(), segmentId: z.string(), value: z.string().nullable(), ...expectedVersion }),
+  z.object({ op: z.literal('setRealtime'), sessionId: z.string(), enabled: z.boolean(), ...expectedVersion }),
 ])
 export type CtmRequest = z.infer<typeof ctmRequestSchema>
 

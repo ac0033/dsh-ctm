@@ -14633,16 +14633,17 @@ var ctmStateSchema = external_exports.object({
   /** Last queued-edit flush failure at agent/pre-step, surfaced so a dropped edit is visible. */
   applyError: external_exports.string().nullable().optional()
 });
+var expectedVersion = { expectedVersion: external_exports.number().int().nonnegative().optional() };
 var ctmRequestSchema = external_exports.discriminatedUnion("op", [
-  external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("replace"), sessionId: external_exports.string(), segmentId: external_exports.string(), content: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("delete"), sessionId: external_exports.string(), segmentId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("rollback"), sessionId: external_exports.string(), turnIndex: external_exports.number().int().nonnegative() }),
-  external_exports.object({ op: external_exports.literal("restore"), sessionId: external_exports.string(), snapshotId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("reset"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("undo"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("override"), sessionId: external_exports.string(), segmentId: external_exports.string(), value: external_exports.string().nullable() }),
-  external_exports.object({ op: external_exports.literal("setRealtime"), sessionId: external_exports.string(), enabled: external_exports.boolean() })
+  external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("replace"), sessionId: external_exports.string(), segmentId: external_exports.string(), content: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("delete"), sessionId: external_exports.string(), segmentId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("rollback"), sessionId: external_exports.string(), turnIndex: external_exports.number().int().nonnegative(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("restore"), sessionId: external_exports.string(), snapshotId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("reset"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("undo"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("override"), sessionId: external_exports.string(), segmentId: external_exports.string(), value: external_exports.string().nullable(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("setRealtime"), sessionId: external_exports.string(), enabled: external_exports.boolean(), ...expectedVersion })
 ]);
 var ctmResponseSchema = external_exports.discriminatedUnion("ok", [
   external_exports.object({ ok: external_exports.literal(true), state: ctmStateSchema }),
@@ -14774,6 +14775,22 @@ function eventDelta(event) {
   if (event.type === "tool/result") return -1;
   return 0;
 }
+function minimalBalancedRange(session, seq) {
+  const nodes = session.surface.nodes;
+  const idx = nodes.indexOf(seq);
+  if (idx === -1) throw new EditPlanError("target_not_on_surface");
+  const depth = [0];
+  for (let i = 0; i < nodes.length; i++) {
+    depth.push(depth[i] + eventDelta(eventForSeq(session, nodes[i])));
+  }
+  let s = idx;
+  while (s > 0 && depth[s] !== 0) s--;
+  if (depth[s] !== 0) throw new EditPlanError("unbalanced");
+  let e = idx;
+  while (e < nodes.length - 1 && depth[e + 1] !== 0) e++;
+  if (depth[e + 1] !== 0) throw new EditPlanError("unbalanced");
+  return { start: nodes[s], end: nodes[e], seqs: nodes.slice(s, e + 1) };
+}
 function eventForSeq(session, seq) {
   const direct = session.events[seq];
   if (direct !== void 0 && direct.seq === seq) return direct;
@@ -14835,12 +14852,11 @@ function planRewriteToolResult(session, seq, text) {
   };
 }
 function planDeleteSegment(session, seq, marker) {
-  requireOnSurface(session, seq);
-  requireBalanced(session, seq);
+  const range = minimalBalancedRange(session, seq);
   return {
     type: "user/message",
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
-    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+    intent: { surfaceOp: { op: "replace", start: range.start, end: range.end }, sourceEventSeqs: range.seqs }
   };
 }
 function planRollback(session, startSeq, marker) {
@@ -14877,10 +14893,74 @@ function planEdit(session, edit) {
       return planRollback(session, edit.startSeq, edit.marker);
     case "undo":
       return planUndo(session, edit.applied);
+    case "restore":
+      throw new Error("restore edits are planned by planRestore, not planEdit");
   }
+}
+function blockText(blocks) {
+  if (typeof blocks === "string") return blocks;
+  if (!Array.isArray(blocks)) return "";
+  const parts = [];
+  for (const b of blocks) {
+    if (b !== null && typeof b === "object" && b.type === "text") {
+      const text = b.text;
+      if (typeof text === "string") parts.push(text);
+    }
+  }
+  return parts.join("\n");
+}
+function restoredEventText(event) {
+  const d = event.data ?? {};
+  if (event.type === "user/message") return blockText(d.content);
+  const msg = d.message ?? d;
+  if (event.type === "tool/result") {
+    const content = msg.content?.[0]?.content;
+    return typeof content === "string" ? content : blockText(content);
+  }
+  return blockText(msg.content);
+}
+var RESTORED_EMPTY_TEXT = "[CTM] A restored message had no text content.";
+function planRestore(session, applied) {
+  requireOnSurface(session, applied.replacementSeq);
+  const shadowed = applied.shadowedSeqs ?? [];
+  if (shadowed.length === 0) throw new EditPlanError("empty_range");
+  return shadowed.map((seq, i) => {
+    const original = eventForSeq(session, seq);
+    if (original === void 0) throw new EditPlanError("target_not_on_surface");
+    const data = buildUserMessageData(restoredEventText(original) || RESTORED_EMPTY_TEXT, { kind: "user" });
+    return i === 0 ? {
+      type: "user/message",
+      data,
+      intent: {
+        surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+        sourceEventSeqs: [applied.replacementSeq, seq]
+      }
+    } : {
+      type: "user/message",
+      data,
+      intent: { surfaceOp: "append", sourceEventSeqs: [seq] }
+    };
+  });
 }
 function planUndo(session, applied) {
   requireOnSurface(session, applied.replacementSeq);
+  if (applied.kind === "restore") {
+    const restored = applied.restoredSeqs ?? [applied.replacementSeq];
+    const nodes = session.surface.nodes;
+    const startIdx = nodes.indexOf(applied.replacementSeq);
+    const tail = nodes.slice(startIdx);
+    if (tail.length !== restored.length || !tail.every((s, i) => s === restored[i])) {
+      throw new EditPlanError("target_not_on_surface");
+    }
+    return {
+      type: "user/message",
+      data: buildUserMessageData(applied.marker ?? "[CTM] The conversation was rolled back by the user.", CTM_PLUGIN_SOURCE),
+      intent: {
+        surfaceOp: { op: "replace", start: restored[0], end: restored[restored.length - 1] },
+        sourceEventSeqs: [...restored]
+      }
+    };
+  }
   const original = eventForSeq(session, applied.originalSeq);
   if (original === void 0) throw new EditPlanError("target_not_on_surface");
   if (applied.kind === "replace-tool") {
@@ -14912,17 +14992,45 @@ function applyEditGroup(session, group) {
   let replacementSeq = -1;
   let originalSeq = -1;
   let kind = null;
+  let shadowedSeqs;
+  let restoredSeqs;
+  let marker;
   for (const edit of group.edits) {
+    if (edit.kind === "restore") {
+      const seqs = [];
+      for (const plan2 of planRestore(session, edit.applied)) {
+        seqs.push(session.append(plan2.type, plan2.data, plan2.intent).seq);
+      }
+      replacementSeq = seqs[0];
+      restoredSeqs = seqs;
+      if (originalSeq === -1) originalSeq = edit.applied.originalSeq;
+      marker = edit.applied.marker;
+      kind = "restore";
+      continue;
+    }
     const plan = planEdit(session, edit);
     const appended = session.append(plan.type, plan.data, plan.intent);
     replacementSeq = appended.seq;
+    if (edit.kind === "delete" || edit.kind === "rollback") {
+      shadowedSeqs = [...plan.intent.sourceEventSeqs];
+      marker = edit.marker;
+    }
     if (originalSeq === -1) {
       originalSeq = edit.kind === "undo" ? edit.applied.originalSeq : edit.kind === "rollback" ? edit.startSeq : edit.seq;
     }
     kind = edit.kind;
   }
   if (kind === null) return null;
-  return { groupId: group.id, kind, replacementSeq, originalSeq, undoable: group.undoable };
+  return {
+    groupId: group.id,
+    kind,
+    replacementSeq,
+    originalSeq,
+    undoable: group.undoable,
+    ...shadowedSeqs !== void 0 ? { shadowedSeqs } : {},
+    ...restoredSeqs !== void 0 ? { restoredSeqs } : {},
+    ...marker !== void 0 ? { marker } : {}
+  };
 }
 
 // src/host.ts
@@ -15499,19 +15607,22 @@ function apply(ctx) {
       const seg = findSeg(cur, id);
       if (!seg || seg.seq < 0) continue;
       const edit = { kind: "delete", seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` };
-      if (enqueue(st, session, "delete", eventBySeq(session, seg.seq)?.type === "user/message", edit, [id]) === null) count++;
+      if (enqueue(st, session, "delete", true, edit, [id]) === null) count++;
     }
     if (st.rolledBack.size > 0) {
       let startSeq = -1;
       for (const s of cur) if (st.rolledBack.has(s.id) && s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq;
       if (startSeq >= 0) {
         const edit = { kind: "rollback", startSeq, marker: "[CTM] The conversation was rolled back by the user." };
-        if (enqueue(st, session, "rollback", false, edit, [...st.rolledBack]) === null) count++;
+        if (enqueue(st, session, "rollback", true, edit, [...st.rolledBack]) === null) count++;
       }
     }
     return count;
   }
   function dispatch(request, st, cur) {
+    if (request.op !== "getState" && request.expectedVersion !== void 0 && request.expectedVersion !== st.version) {
+      return { kind: "error", code: "stale_version" };
+    }
     switch (request.op) {
       case "getState":
         return null;
@@ -15565,7 +15676,7 @@ function apply(ctx) {
           return { kind: "warn", code: "session_not_live" };
         }
         const edit = { kind: "delete", seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` };
-        const error51 = enqueue(st, session, "delete", eventBySeq(session, seg.seq)?.type === "user/message", edit, [seg.id]);
+        const error51 = enqueue(st, session, "delete", true, edit, [seg.id]);
         if (error51 !== null) {
           st.deleted.delete(seg.id);
           st.trash = st.trash.filter((t) => t.id !== seg.id);
@@ -15595,13 +15706,14 @@ function apply(ctx) {
           const session = liveSession(request.sessionId);
           if (session === void 0) return { kind: "warn", code: "session_not_live" };
           const edit = { kind: "rollback", startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` };
-          const error51 = enqueue(st, session, "rollback", false, edit, [...st.rolledBack]);
+          const error51 = enqueue(st, session, "rollback", true, edit, [...st.rolledBack]);
           if (error51 !== null) {
             st.rolledBack = previous;
             return { kind: "error", code: error51 };
           }
           return { kind: "ok", code: "rollback_queued", params: { count } };
         }
+        st.undoStack = { ids: [], prevRolledBack: [...previous] };
         return { kind: "ok", code: "rolled_back", params: { count } };
       }
       case "restore": {
@@ -15637,9 +15749,10 @@ function apply(ctx) {
           releaseViewMutations(st, queued);
           return { kind: "ok", code: "undone_queued" };
         }
-        if (st.undoStack && st.undoStack.ids.length) {
+        if (st.undoStack && (st.undoStack.ids.length > 0 || st.undoStack.prevRolledBack !== void 0)) {
           for (const id of st.undoStack.ids) st.deleted.delete(id);
           st.trash = st.trash.filter((t) => !st.undoStack.ids.includes(t.id));
+          if (st.undoStack.prevRolledBack !== void 0) st.rolledBack = new Set(st.undoStack.prevRolledBack);
           st.undoStack = null;
           return { kind: "ok", code: "undone" };
         }
@@ -15647,6 +15760,36 @@ function apply(ctx) {
         if (applied) {
           const session = liveSession(request.sessionId);
           if (session === void 0) return { kind: "warn", code: "undo_unavailable" };
+          if (applied.kind === "restore") {
+            try {
+              planUndo(session, applied);
+            } catch (e) {
+              if (e instanceof EditPlanError) return { kind: "warn", code: "undo_unavailable" };
+              throw e;
+            }
+            st.appliedEdits.pop();
+            const ids = (applied.restoredSeqs ?? [applied.replacementSeq]).map((s) => "seg-" + s);
+            st.queue.push({ id: newGroupId(), kind: "undo", undoable: false, edits: [{ kind: "undo", applied }], segmentIds: ids });
+            st.edits.set(ids[0], applied.marker ?? "[CTM] The conversation was rolled back by the user.");
+            return { kind: "ok", code: "undone_queued" };
+          }
+          const shadowed = applied.shadowedSeqs ?? [applied.originalSeq];
+          const faithful = applied.kind === "replace-tool" || applied.kind !== "rollback" && shadowed.length === 1 && eventBySeq(session, shadowed[0])?.type === "user/message";
+          if (!faithful) {
+            try {
+              planRestore(session, applied);
+            } catch (e) {
+              if (e instanceof EditPlanError) return { kind: "warn", code: "undo_unavailable" };
+              throw e;
+            }
+            st.appliedEdits.pop();
+            const placeholderId = "seg-" + applied.replacementSeq;
+            st.queue.push({ id: newGroupId(), kind: "undo", undoable: true, edits: [{ kind: "restore", applied }], segmentIds: [placeholderId] });
+            const first = eventBySeq(session, shadowed[0]);
+            const preview = first ? restoredEventText(first) : "";
+            if (preview) st.edits.set(placeholderId, preview);
+            return { kind: "ok", code: "undone_queued" };
+          }
           try {
             planUndo(session, applied);
           } catch (e) {

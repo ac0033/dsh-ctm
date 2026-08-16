@@ -214,7 +214,7 @@ var zh = {
   unbalancedEdit: "\u8BE5\u7F16\u8F91\u4F1A\u622A\u65AD\u5DE5\u5177\u8C03\u7528/\u7ED3\u679C\u914D\u5BF9\uFF0C\u5DF2\u62D2\u7EDD\u3002",
   toolResultChanged: "\u5DE5\u5177\u7ED3\u679C\u53EA\u5141\u8BB8\u4FEE\u6539\u6B63\u6587\u5185\u5BB9\u3002",
   invalidTemplate: "\u5185\u5BB9\u4E0D\u80FD\u5305\u542B\u300C{{\u300D\uFF08\u4F1A\u88AB\u5F53\u4F5C\u6A21\u677F\u53D8\u91CF\u5BFC\u81F4\u8BF7\u6C42\u5931\u8D25\uFF09\u3002",
-  undoneQueued: "\u5DF2\u64A4\u9500\u6700\u8FD1\u64CD\u4F5C\uFF1B\u82E5\u539F\u7F16\u8F91\u5DF2\u751F\u6548\uFF0C\u5C06\u5728\u4E0B\u4E00\u6B65\u4EE5\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002",
+  undoneQueued: "\u5DF2\u64A4\u9500\u6700\u8FD1\u64CD\u4F5C\uFF1B\u82E5\u539F\u7F16\u8F91\u5DF2\u751F\u6548\uFF0C\u5C06\u5728\u4E0B\u4E00\u6B65\u4EE5\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002\u64A4\u9500\u56DE\u9000\uFF08\u6216\u6D89\u53CA\u5DE5\u5177\u914D\u5BF9\u7684\u5220\u9664\uFF09\u65F6\uFF0C\u88AB\u79FB\u9664\u7684\u5185\u5BB9\u4F1A\u4EE5 user \u6D88\u606F\u8EAB\u4EFD\u6062\u590D\u2014\u2014\u65E5\u5FD7\u53EA\u80FD\u8FFD\u52A0\uFF0C\u65E0\u6CD5\u6309\u539F assistant/tool \u89D2\u8272\u8865\u56DE\u3002",
   deletedQueued: "\u5DF2\u5220\u9664\u5E76\u5165\u961F\uFF1A\u8BE5\u7247\u6BB5\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\uFF08\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF09\u3002",
   undoUnavailable: "\u65E0\u6CD5\u64A4\u9500\uFF1A\u8BE5\u7F16\u8F91\u5DF2\u65E0\u6CD5\u5728\u5F53\u524D\u4E0A\u4E0B\u6587\u4E2D\u5B9A\u4F4D\u3002",
   cannotReplaceSystem: "\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u4E0D\u53EF\u66FF\u6362\uFF08\u53EA\u8BFB\uFF09\u3002",
@@ -375,7 +375,7 @@ var en = {
   unbalancedEdit: "Rejected: the edit would split a tool call/result pair.",
   toolResultChanged: "Only the content of a tool result may be changed.",
   invalidTemplate: 'Content must not contain "{{" (treated as a template variable; would fail the request).',
-  undoneQueued: "Undone; if the original edit was already applied, it is reversed by a counter-edit at the next step.",
+  undoneQueued: "Undone; if the original edit was already applied, it is reversed by a counter-edit at the next step. Undoing a rollback (or a delete spanning a tool pair) restores the removed content as user messages \u2014 the append-only log cannot re-add the original assistant/tool roles.",
   deletedQueued: "Deleted and queued: the segment is replaced by a placeholder marker at the next step (logged).",
   undoUnavailable: "Cannot undo: the edit can no longer be located on the live surface.",
   cannotReplaceSystem: "System-injected content is read-only and cannot be replaced.",
@@ -15878,16 +15878,17 @@ var ctmStateSchema = external_exports.object({
   /** Last queued-edit flush failure at agent/pre-step, surfaced so a dropped edit is visible. */
   applyError: external_exports.string().nullable().optional()
 });
+var expectedVersion = { expectedVersion: external_exports.number().int().nonnegative().optional() };
 var ctmRequestSchema = external_exports.discriminatedUnion("op", [
-  external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("replace"), sessionId: external_exports.string(), segmentId: external_exports.string(), content: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("delete"), sessionId: external_exports.string(), segmentId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("rollback"), sessionId: external_exports.string(), turnIndex: external_exports.number().int().nonnegative() }),
-  external_exports.object({ op: external_exports.literal("restore"), sessionId: external_exports.string(), snapshotId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("reset"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("undo"), sessionId: external_exports.string() }),
-  external_exports.object({ op: external_exports.literal("override"), sessionId: external_exports.string(), segmentId: external_exports.string(), value: external_exports.string().nullable() }),
-  external_exports.object({ op: external_exports.literal("setRealtime"), sessionId: external_exports.string(), enabled: external_exports.boolean() })
+  external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("replace"), sessionId: external_exports.string(), segmentId: external_exports.string(), content: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("delete"), sessionId: external_exports.string(), segmentId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("rollback"), sessionId: external_exports.string(), turnIndex: external_exports.number().int().nonnegative(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("restore"), sessionId: external_exports.string(), snapshotId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("reset"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("undo"), sessionId: external_exports.string(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("override"), sessionId: external_exports.string(), segmentId: external_exports.string(), value: external_exports.string().nullable(), ...expectedVersion }),
+  external_exports.object({ op: external_exports.literal("setRealtime"), sessionId: external_exports.string(), enabled: external_exports.boolean(), ...expectedVersion })
 ]);
 var ctmResponseSchema = external_exports.discriminatedUnion("ok", [
   external_exports.object({ ok: external_exports.literal(true), state: ctmStateSchema }),

@@ -32,7 +32,9 @@ import {
   EditPlanError,
   applyEditGroup,
   planEdit,
+  planRestore,
   planUndo,
+  restoredEventText,
   type AppendCapable,
   type AppliedEdit,
   type EditGroup,
@@ -69,7 +71,8 @@ interface CtmStore {
   edits: Map<string, string>
   deleted: Set<string>
   trash: CtmSegment[]
-  undoStack: { ids: string[] } | null
+  /** View-only (realtime OFF) undo slot: a soft delete's ids, or the rolledBack set a view rollback replaced. */
+  undoStack: { ids: string[]; prevRolledBack?: string[] } | null
   overrides: Map<string, CtmEffectiveness>
   rolledBack: Set<string>
   snapshots: { id: string; createdAt: number; label: string; segments: CtmSegment[] }[]
@@ -537,7 +540,7 @@ export function apply(ctx: any): void {
     return best
   }
 
-  function eventBySeq(session: SessionLike, seq: number): { type: string; data: any } | undefined {
+  function eventBySeq(session: SessionLike, seq: number): SessionLike['events'][number] | undefined {
     const direct = session.events[seq]
     if (direct !== undefined && direct.seq === seq) return direct
     return session.events.find(e => e.seq === seq)
@@ -627,20 +630,26 @@ export function apply(ctx: any): void {
       const seg = findSeg(cur, id)
       if (!seg || seg.seq < 0) continue
       const edit: QueuedEdit = { kind: 'delete', seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` }
-      if (enqueue(st, session, 'delete', eventBySeq(session, seg.seq)?.type === 'user/message', edit, [id]) === null) count++
+      if (enqueue(st, session, 'delete', true, edit, [id]) === null) count++
     }
     if (st.rolledBack.size > 0) {
       let startSeq = -1
       for (const s of cur) if (st.rolledBack.has(s.id) && s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq
       if (startSeq >= 0) {
         const edit: QueuedEdit = { kind: 'rollback', startSeq, marker: '[CTM] The conversation was rolled back by the user.' }
-        if (enqueue(st, session, 'rollback', false, edit, [...st.rolledBack]) === null) count++
+        if (enqueue(st, session, 'rollback', true, edit, [...st.rolledBack]) === null) count++
       }
     }
     return count
   }
 
   function dispatch(request: CtmRequest, st: CtmStore, cur: CtmSegment[]): CtmNotice | null {
+    // Optimistic concurrency: a mutating request may cite the state version it
+    // was issued against. A mismatch means another request landed in between,
+    // so the edit is rejected BEFORE any side effect (store, queue, or log).
+    if (request.op !== 'getState' && request.expectedVersion !== undefined && request.expectedVersion !== st.version) {
+      return { kind: 'error', code: 'stale_version' }
+    }
     switch (request.op) {
       case 'getState': return null
       case 'replace': {
@@ -686,9 +695,10 @@ export function apply(ctx: any): void {
         const session = liveSession(request.sessionId)
         if (session === undefined) { st.undoStack = { ids: [seg.id] }; return { kind: 'warn', code: 'session_not_live' } }
         const edit: QueuedEdit = { kind: 'delete', seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` }
-        // Only a deleted user/message can be faithfully re-appended by undo;
-        // other roles would come back with the wrong role.
-        const error = enqueue(st, session, 'delete', eventBySeq(session, seg.seq)?.type === 'user/message', edit, [seg.id])
+        // Every delete is undoable: a lone user/message comes back verbatim;
+        // anything wider (a tool result shadows its whole call pair) is
+        // restored as user messages by role demotion.
+        const error = enqueue(st, session, 'delete', true, edit, [seg.id])
         if (error !== null) {
           st.deleted.delete(seg.id)
           st.trash = st.trash.filter(t => t.id !== seg.id)
@@ -718,10 +728,13 @@ export function apply(ctx: any): void {
           const session = liveSession(request.sessionId)
           if (session === undefined) return { kind: 'warn', code: 'session_not_live' }
           const edit: QueuedEdit = { kind: 'rollback', startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` }
-          const error = enqueue(st, session, 'rollback', false, edit, [...st.rolledBack])
+          const error = enqueue(st, session, 'rollback', true, edit, [...st.rolledBack])
           if (error !== null) { st.rolledBack = previous; return { kind: 'error', code: error } }
           return { kind: 'ok', code: 'rollback_queued', params: { count } }
         }
+        // View-only rollback: remember the replaced rolledBack set so undo can
+        // restore it (the realtime path undoes via the edit queue instead).
+        st.undoStack = { ids: [], prevRolledBack: [...previous] }
         return { kind: 'ok', code: 'rolled_back', params: { count } }
       }
       case 'restore': {
@@ -739,18 +752,24 @@ export function apply(ctx: any): void {
         return { kind: 'ok', code: 'reset' }
       case 'undo': {
         // Undo only the most recent operation, at three depths: a queued
-        // (not yet logged) group is simply dequeued; a view-only delete is
+        // (not yet logged) group is simply dequeued; a view-only mutation is
         // reverted in memory; an already-logged edit is reversed by queueing
-        // a counter-replace with the original content from the immutable log.
+        // a counter-edit. The counter-edit is a faithful counter-replace for
+        // a lone user/message (or a tool rewrite); a rollback — or a delete
+        // that shadowed more than a lone user/message — is reversed by a
+        // restore group that brings the shadowed content back as user
+        // messages (role demotion; the append-only log cannot re-add
+        // assistant/tool roles).
         const queued = st.queue[st.queue.length - 1]
         if (queued) {
           st.queue.pop()
           releaseViewMutations(st, queued)
           return { kind: 'ok', code: 'undone_queued' }
         }
-        if (st.undoStack && st.undoStack.ids.length) {
+        if (st.undoStack && (st.undoStack.ids.length > 0 || st.undoStack.prevRolledBack !== undefined)) {
           for (const id of st.undoStack.ids) st.deleted.delete(id)
           st.trash = st.trash.filter(t => !st.undoStack!.ids.includes(t.id))
+          if (st.undoStack.prevRolledBack !== undefined) st.rolledBack = new Set(st.undoStack.prevRolledBack)
           st.undoStack = null
           return { kind: 'ok', code: 'undone' }
         }
@@ -758,6 +777,42 @@ export function apply(ctx: any): void {
         if (applied) {
           const session = liveSession(request.sessionId)
           if (session === undefined) return { kind: 'warn', code: 'undo_unavailable' }
+          if (applied.kind === 'restore') {
+            // Undo of a restore re-shadows the restored run: the rollback
+            // placeholder comes back. planUndo refuses once later content
+            // sits inside the restored run (the range replace would swallow it).
+            try {
+              planUndo(session, applied) // validation only; replanned at flush time
+            } catch (e) {
+              if (e instanceof EditPlanError) return { kind: 'warn', code: 'undo_unavailable' }
+              throw e
+            }
+            st.appliedEdits.pop()
+            const ids = (applied.restoredSeqs ?? [applied.replacementSeq]).map(s => 'seg-' + s)
+            st.queue.push({ id: newGroupId(), kind: 'undo', undoable: false, edits: [{ kind: 'undo', applied }], segmentIds: ids })
+            st.edits.set(ids[0]!, applied.marker ?? '[CTM] The conversation was rolled back by the user.')
+            return { kind: 'ok', code: 'undone_queued' }
+          }
+          const shadowed = applied.shadowedSeqs ?? [applied.originalSeq]
+          const faithful = applied.kind === 'replace-tool'
+            || (applied.kind !== 'rollback' && shadowed.length === 1 && eventBySeq(session, shadowed[0]!)?.type === 'user/message')
+          if (!faithful) {
+            try {
+              planRestore(session, applied) // validation only; replanned at flush time
+            } catch (e) {
+              if (e instanceof EditPlanError) return { kind: 'warn', code: 'undo_unavailable' }
+              throw e
+            }
+            st.appliedEdits.pop()
+            const placeholderId = 'seg-' + applied.replacementSeq
+            // The restore group is itself undoable: undoing it re-shadows the
+            // restored run (a rollback placeholder again).
+            st.queue.push({ id: newGroupId(), kind: 'undo', undoable: true, edits: [{ kind: 'restore', applied }], segmentIds: [placeholderId] })
+            const first = eventBySeq(session, shadowed[0]!)
+            const preview = first ? restoredEventText(first) : ''
+            if (preview) st.edits.set(placeholderId, preview)
+            return { kind: 'ok', code: 'undone_queued' }
+          }
           try {
             planUndo(session, applied) // validation only; replanned at flush time
           } catch (e) {

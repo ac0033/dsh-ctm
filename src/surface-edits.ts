@@ -68,6 +68,43 @@ function eventDelta(event: SessionEventLike | undefined): number {
   return 0
 }
 
+/** A contiguous surface range whose boundary cuts are both tool-pair balanced. */
+export interface BalancedRange {
+  start: number
+  end: number
+  /** Every surface seq inside the range, in surface order. */
+  seqs: number[]
+}
+
+/**
+ * Minimal balanced shadow range around one surface node: the smallest
+ * contiguous range containing `seq` such that the cut before `start` and the
+ * cut after `end` are both tool-pair balanced. For a plain user message (or
+ * any node whose own cuts are already balanced) this is the single node
+ * itself. For a `tool/result` the range extends left until it absorbs the
+ * assistant message carrying the matching tool-call — otherwise shadowing the
+ * result alone would leave the model staring at an unanswered call. The two
+ * expansions are independent: the prefix depth below an index only depends on
+ * the nodes before it, never on how far the other end reaches.
+ */
+export function minimalBalancedRange(session: SessionLike, seq: number): BalancedRange {
+  const nodes = session.surface.nodes
+  const idx = nodes.indexOf(seq)
+  if (idx === -1) throw new EditPlanError('target_not_on_surface')
+  // depth[i] = tool-call depth of the surface prefix nodes[0..i-1].
+  const depth: number[] = [0]
+  for (let i = 0; i < nodes.length; i++) {
+    depth.push(depth[i]! + eventDelta(eventForSeq(session, nodes[i]!)))
+  }
+  let s = idx
+  while (s > 0 && depth[s] !== 0) s--
+  if (depth[s] !== 0) throw new EditPlanError('unbalanced')
+  let e = idx
+  while (e < nodes.length - 1 && depth[e + 1] !== 0) e++
+  if (depth[e + 1] !== 0) throw new EditPlanError('unbalanced')
+  return { start: nodes[s]!, end: nodes[e]!, seqs: nodes.slice(s, e + 1) }
+}
+
 /** Look up one log event by seq (events are append-ordered, so index === seq in the common case). */
 function eventForSeq(session: SessionLike, seq: number): SessionEventLike | undefined {
   const direct = session.events[seq]
@@ -113,7 +150,7 @@ export interface AppendPlan {
   type: 'user/message' | 'tool/result'
   data: Record<string, unknown>
   intent: {
-    surfaceOp: { op: 'replace'; start: number; end: number }
+    surfaceOp: 'append' | { op: 'replace'; start: number; end: number }
     sourceEventSeqs: number[]
   }
 }
@@ -172,15 +209,17 @@ export function planRewriteToolResult(session: SessionLike, seq: number, text: s
 /**
  * Delete as "shadow + placeholder": a replace must occupy the shadowed range
  * with a new node, so removal is expressed as replacing the segment with a
- * placeholder `user/message` (the same shape compaction checkpoints use).
+ * placeholder `user/message` (the same shape compaction checkpoints use). The
+ * shadow range is the minimal balanced range around the target: deleting a
+ * tool result absorbs the assistant message carrying its tool-call (and any
+ * sibling results between them), so the model never sees a dangling call.
  */
 export function planDeleteSegment(session: SessionLike, seq: number, marker: string): AppendPlan {
-  requireOnSurface(session, seq)
-  requireBalanced(session, seq)
+  const range = minimalBalancedRange(session, seq)
   return {
     type: 'user/message',
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
-    intent: { surfaceOp: { op: 'replace', start: seq, end: seq }, sourceEventSeqs: [seq] },
+    intent: { surfaceOp: { op: 'replace', start: range.start, end: range.end }, sourceEventSeqs: range.seqs },
   }
 }
 
@@ -220,6 +259,7 @@ export type QueuedEdit =
   | { kind: 'delete'; seq: number; marker: string }
   | { kind: 'rollback'; startSeq: number; marker: string }
   | { kind: 'undo'; applied: AppliedEdit }
+  | { kind: 'restore'; applied: AppliedEdit }
 
 /** One dispatched operation's worth of queued edits, undone or flushed as a unit. */
 export interface EditGroup {
@@ -239,6 +279,16 @@ export interface AppliedEdit {
   replacementSeq: number
   originalSeq: number
   undoable: boolean
+  /**
+   * Every surface seq the group's replace shadowed (delete: the minimal
+   * balanced range; rollback: the whole tail range). Undo reads the shadowed
+   * originals back from the immutable log to restore them.
+   */
+  shadowedSeqs?: number[]
+  /** Restore groups only: seqs of the nodes the restore created (first replaced + appended). */
+  restoredSeqs?: number[]
+  /** Delete/rollback groups only: the placeholder marker text, reused when a restore is itself undone. */
+  marker?: string
 }
 
 /** Plan one queued edit against the current surface. */
@@ -249,7 +299,74 @@ export function planEdit(session: SessionLike, edit: QueuedEdit): AppendPlan {
     case 'delete': return planDeleteSegment(session, edit.seq, edit.marker)
     case 'rollback': return planRollback(session, edit.startSeq, edit.marker)
     case 'undo': return planUndo(session, edit.applied)
+    case 'restore':
+      // A restore plans one replace plus zero or more appends; applyEditGroup
+      // drives it through planRestore, never through this single-plan switch.
+      throw new Error('restore edits are planned by planRestore, not planEdit')
   }
+}
+
+/** Join the text of message content blocks (restore carries text only). */
+function blockText(blocks: unknown): string {
+  if (typeof blocks === 'string') return blocks
+  if (!Array.isArray(blocks)) return ''
+  const parts: string[] = []
+  for (const b of blocks) {
+    if (b !== null && typeof b === 'object' && (b as { type?: unknown }).type === 'text') {
+      const text = (b as { text?: unknown }).text
+      if (typeof text === 'string') parts.push(text)
+    }
+  }
+  return parts.join('\n')
+}
+
+/** Text a shadowed event contributes when restored as a user message (role demotion keeps text only). */
+export function restoredEventText(event: SessionEventLike): string {
+  const d = (event.data ?? {}) as Record<string, any>
+  if (event.type === 'user/message') return blockText(d.content)
+  const msg = (d.message ?? d) as Record<string, any>
+  if (event.type === 'tool/result') {
+    const content = msg.content?.[0]?.content
+    return typeof content === 'string' ? content : blockText(content)
+  }
+  return blockText(msg.content)
+}
+
+/** Text used when a shadowed event carries no plain text at all. */
+const RESTORED_EMPTY_TEXT = '[CTM] A restored message had no text content.'
+
+/**
+ * Undo of a rollback (or of a multi-node/non-user delete): bring the shadowed
+ * content back. The log is append-only, so the originals cannot reclaim their
+ * roles — every restored message is carried by a fresh `user/message` (the
+ * same role demotion as assistant revisions). The first shadowed event
+ * replaces the placeholder node in place; the rest append to the surface tail
+ * in original order. Restored content is read back from the immutable log at
+ * flush time, so the shadowed originals are always available.
+ */
+export function planRestore(session: SessionLike, applied: AppliedEdit): AppendPlan[] {
+  requireOnSurface(session, applied.replacementSeq)
+  const shadowed = applied.shadowedSeqs ?? []
+  if (shadowed.length === 0) throw new EditPlanError('empty_range')
+  return shadowed.map((seq, i) => {
+    const original = eventForSeq(session, seq)
+    if (original === undefined) throw new EditPlanError('target_not_on_surface')
+    const data = buildUserMessageData(restoredEventText(original) || RESTORED_EMPTY_TEXT, { kind: 'user' })
+    return i === 0
+      ? {
+          type: 'user/message' as const,
+          data,
+          intent: {
+            surfaceOp: { op: 'replace' as const, start: applied.replacementSeq, end: applied.replacementSeq },
+            sourceEventSeqs: [applied.replacementSeq, seq],
+          },
+        }
+      : {
+          type: 'user/message' as const,
+          data,
+          intent: { surfaceOp: 'append' as const, sourceEventSeqs: [seq] },
+        }
+  })
 }
 
 /**
@@ -262,6 +379,27 @@ export function planEdit(session: SessionLike, edit: QueuedEdit): AppendPlan {
  */
 export function planUndo(session: SessionLike, applied: AppliedEdit): AppendPlan {
   requireOnSurface(session, applied.replacementSeq)
+  if (applied.kind === 'restore') {
+    // Undo of a restore re-shadows the restored run (a rollback placeholder
+    // again). This is only expressible while the restored run still IS the
+    // surface tail: a later append sitting inside the run would be swallowed
+    // by the range replace, so the undo refuses instead.
+    const restored = applied.restoredSeqs ?? [applied.replacementSeq]
+    const nodes = session.surface.nodes
+    const startIdx = nodes.indexOf(applied.replacementSeq)
+    const tail = nodes.slice(startIdx)
+    if (tail.length !== restored.length || !tail.every((s, i) => s === restored[i])) {
+      throw new EditPlanError('target_not_on_surface')
+    }
+    return {
+      type: 'user/message',
+      data: buildUserMessageData(applied.marker ?? '[CTM] The conversation was rolled back by the user.', CTM_PLUGIN_SOURCE),
+      intent: {
+        surfaceOp: { op: 'replace', start: restored[0]!, end: restored[restored.length - 1]! },
+        sourceEventSeqs: [...restored],
+      },
+    }
+  }
   const original = eventForSeq(session, applied.originalSeq)
   if (original === undefined) throw new EditPlanError('target_not_on_surface')
   if (applied.kind === 'replace-tool') {
@@ -299,15 +437,41 @@ export function applyEditGroup(session: SessionLike & AppendCapable, group: Edit
   let replacementSeq = -1
   let originalSeq = -1
   let kind: QueuedEdit['kind'] | null = null
+  let shadowedSeqs: number[] | undefined
+  let restoredSeqs: number[] | undefined
+  let marker: string | undefined
   for (const edit of group.edits) {
+    if (edit.kind === 'restore') {
+      const seqs: number[] = []
+      for (const plan of planRestore(session, edit.applied)) {
+        seqs.push(session.append(plan.type, plan.data, plan.intent).seq)
+      }
+      replacementSeq = seqs[0]!
+      restoredSeqs = seqs
+      if (originalSeq === -1) originalSeq = edit.applied.originalSeq
+      marker = edit.applied.marker
+      kind = 'restore'
+      continue
+    }
     const plan = planEdit(session, edit)
     const appended = session.append(plan.type, plan.data, plan.intent)
     replacementSeq = appended.seq
+    if (edit.kind === 'delete' || edit.kind === 'rollback') {
+      // The replace intent cites exactly the shadowed surface range; undo
+      // needs it to restore the shadowed originals from the log.
+      shadowedSeqs = [...plan.intent.sourceEventSeqs]
+      marker = edit.marker
+    }
     if (originalSeq === -1) {
       originalSeq = edit.kind === 'undo' ? edit.applied.originalSeq : edit.kind === 'rollback' ? edit.startSeq : edit.seq
     }
     kind = edit.kind
   }
   if (kind === null) return null
-  return { groupId: group.id, kind, replacementSeq, originalSeq, undoable: group.undoable }
+  return {
+    groupId: group.id, kind, replacementSeq, originalSeq, undoable: group.undoable,
+    ...(shadowedSeqs !== undefined ? { shadowedSeqs } : {}),
+    ...(restoredSeqs !== undefined ? { restoredSeqs } : {}),
+    ...(marker !== undefined ? { marker } : {}),
+  }
 }

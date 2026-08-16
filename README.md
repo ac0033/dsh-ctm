@@ -10,7 +10,7 @@
 - **初始系统提示词**：作为片段 0 在「系统提示词」框内展示一次。`request/header` 并非只记一次——loop 边界（initial / resume）和请求封套变化（切模型、改提示词等）都会写下新的全量快照，读取时取最新一条即可；CTM 的活体读取走 `requestHeader()`，历史会话走 `readSession()` 回退。可被替换编辑（见下）。
 - **可编辑**：替换、删除、回滚、快照恢复、撤销、有效性标注（手动覆盖）。初始系统提示词可替换；其余系统注入内容（运行上下文等）与工具结果在界面上只读。
 - **有效性引擎**：自动判定 `effective` / `redundant` / `stale` / `injected`，可手动覆盖。2-gram 相似度集合带 LRU 缓存（上限 500 条），不会每次请求全量重建。
-- **真实生效（默认关）**：开启后，替换 / 删除 / 回滚不再拦截请求，而是作为 surface `replace` 事件在 `agent/pre-step` 写入会话日志（与官方 compaction 同一时机、同一机制），满足 DSH「model-visible ⟺ logged」不变量——replay / fork / token 计量自动与模型实际所见一致。编辑落日志前标记「待生效」；删除 / 回滚以占位 `user/message` 节点承载，assistant 修订以角色降格为 user 消息承载，均保持 tool-call/result 配对不被截断。撤销 = 未落日志的排队编辑直接出队，已落日志的编辑以原始内容构造反向 replace 事件（仅支持撤销最近一组操作）。落日志失败会记录日志并在视图顶部显示错误。
+- **真实生效（默认关）**：开启后，替换 / 删除 / 回滚不再拦截请求，而是作为 surface `replace` 事件在 `agent/pre-step` 写入会话日志（与官方 compaction 同一时机、同一机制），满足 DSH「model-visible ⟺ logged」不变量——replay / fork / token 计量自动与模型实际所见一致。编辑落日志前标记「待生效」；删除 / 回滚以占位 `user/message` 节点承载，assistant 修订以角色降格为 user 消息承载，均保持 tool-call/result 配对不被截断（删除一律取「最小平衡区间」做 shadow：删工具结果会把携带对应 tool-call 的 assistant 消息一并吸收进 shadow 范围，模型不会看到悬空调用）。撤销 = 未落日志的排队编辑直接出队，已落日志的编辑以原始内容构造反向 replace 事件（仅支持撤销最近一组操作）；回滚与多节点删除的撤销走「恢复组」：占位节点被 replace 为被 shadow 内容的第一条，其余按原顺序 append 到尾部，全部降格为 user 消息承载（append-only 日志无法按原 assistant/tool 角色补回），恢复组本身也可撤销（再次撤销 = 重新 shadow）。落日志失败会记录日志并在视图顶部显示错误。带 `expectedVersion` 的变更请求会做乐观并发校验，version 不匹配即拒绝且无副作用。
 - **系统提示词编辑**：对片段 0 的替换存为 override，经 `system-prompt/assemble` waterfall 在下一次组装提示词时生效；`request/header` 新快照由 agent loop 自动落日志。
 - **i18n**：中 / 英。
 - **零耦合**：host↔client 走纯 HTTP `POST /ctm`，不依赖 Typert `@Remote` / `dsh-api-remotes`；运行时零依赖（tool 配对平衡校验为本地重新实现，不依赖 `@deepseek-ai/dsh-compaction`）。
@@ -48,6 +48,10 @@ src/
 | `setRealtime` | `enabled` |
 
 响应：`{ ok: true, state: CtmState } | { ok: false, error: string }`。
+
+所有 op 都可额外携带可选的 `expectedVersion`（客户端最后一次应用的 state `version`）：host 在产生任何副作用前比对，不一致则返回 `stale_version` 错误通知并拒绝本次变更（乐观并发，防多客户端 / 过期页面竞态）。
+
+**已知限制**：撤销「回滚」或「涉及工具配对的删除」时，被移除的内容以 user 消息角色恢复（第一条 replace 进占位节点、其余 append 到尾部）——append-only 日志无法按原 assistant/tool 角色补写，这是与 assistant 编辑一致的角色降格方案。
 
 ## 安装 / 卸载
 
