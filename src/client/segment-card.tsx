@@ -7,7 +7,7 @@
 import type { CtmSegment } from '../contract'
 import type { Shared } from './shared'
 import { renderMarkdown } from './markdown'
-import { roleLabel, cacheLabel, effLabel, cacheTip, effTip, fmtTime } from './labels'
+import { roleLabel, cacheLabel, effLabel, cacheTip, effTip, fmtTime, formatTokens } from './labels'
 import { unescapeText } from './text'
 
 /** Characters of segment content shown before the fold; a deliberate tuning
@@ -51,13 +51,13 @@ export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
   const thinkOpen = sh.isOpen('think', seg.id)
 
   // One muted meta line replaces the old 4-row dl table; badges sit inline.
-  const meta = [
+  // `#N` and the token count are separate spans because each carries its own
+  // tooltip (interaction-order meaning; estimate disclaimer).
+  const head = [
     roleLabel(t, seg.role),
     seg.turn != null ? `${t('turn')} ${seg.turn}${seg.step != null ? '.' + seg.step : ''}` : null,
-    `#${seg.turn_index}`,
-    fmtTime(seg.created_at),
-    seg.edited ? t('edited') : null,
   ].filter(Boolean).join(' · ')
+  const time = fmtTime(seg.created_at)
   // Double encoding beyond hue: redundant carries ≈, strong-stale carries ⚠.
   const effPrefix = seg.strongStale ? '⚠ ' : eff === 'redundant' ? '≈ ' : ''
 
@@ -86,7 +86,11 @@ export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
   return (
     <div className={`ctm-card eff-${eff}`}>
       <div className="ctm-meta">
-        <span>{meta}</span>
+        <span>{head}</span>
+        <span title={seg.id === 'seg-system' ? t('seq0Tip') : t('seqTip')}>{`#${seg.turn_index}`}</span>
+        {time && <span>{time}</span>}
+        {seg.edited && <span>{t('edited')}</span>}
+        <span title={t('estimatedTip')}>{`≈${formatTokens(seg.token_count)}`}</span>
         <span className="ctm-badge cache" title={cacheTip(t, seg.cache_status)}>{cacheLabel(t, seg.cache_status)}</span>
         <span className={`ctm-badge eff-${eff}`} title={effTip(t, eff)}>{effPrefix + effLabel(t, eff)}</span>
         {seg.pending && <span className="ctm-badge pending" title={t('pendingTip')}>{t('pending')}</span>}

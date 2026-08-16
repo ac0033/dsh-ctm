@@ -24,8 +24,10 @@ import {
   type CtmRequest,
   type CtmSegment,
   type CtmState,
+  type CtmUsageTotals,
 } from './contract'
 import { BIGRAM_CACHE_CAP, createBigramCache, jaccardSimilarity } from './bigrams'
+import { foldUsageEvents, lastRequestUsage, usageFromRaw, type UsageEventLike } from './usage'
 import {
   EditPlanError,
   applyEditGroup,
@@ -73,7 +75,7 @@ interface CtmStore {
   snapshots: { id: string; createdAt: number; label: string; segments: CtmSegment[] }[]
   head: string
   version: number
-  usage: Record<string, number> | null
+  usage: UsageInfo
   model: { provider: string; model: string } | null
   /** Edits waiting to be logged as surface replace events at the next agent/pre-step. */
   queue: EditGroup[]
@@ -84,6 +86,20 @@ interface CtmStore {
   systemOverridePending: boolean
   lastApplyError: string | null
 }
+
+/**
+ * Session-level usage read-out: cumulative MECE totals, the most recent
+ * request, where the totals came from, and (when the host exposes the
+ * `contextPressure` projection) the estimated occupancy of the context window.
+ */
+interface UsageInfo {
+  total: CtmUsageTotals | null
+  lastRequest: CtmUsageTotals | null
+  usageSource: 'projection' | 'events' | 'none'
+  pressure: { tokens: number; contextWindow: number } | null
+}
+
+const NO_USAGE: UsageInfo = { total: null, lastRequest: null, usageSource: 'none', pressure: null }
 
 function storeFor(map: Map<string, CtmStore>, sessionId: string): CtmStore {
   const existing = map.get(sessionId)
@@ -96,7 +112,7 @@ function storeFor(map: Map<string, CtmStore>, sessionId: string): CtmStore {
   const s: CtmStore = {
     base: null, lastBase: [], edits: new Map(), deleted: new Set(), trash: [],
     undoStack: null, overrides: new Map(), rolledBack: new Set(), snapshots: [],
-    head: 'live', version: 0, usage: null, model: null,
+    head: 'live', version: 0, usage: { ...NO_USAGE }, model: null,
     queue: [], appliedEdits: [], systemOverride: null, systemOverridePending: false,
     lastApplyError: null,
   }
@@ -109,7 +125,13 @@ function storeFor(map: Map<string, CtmStore>, sessionId: string): CtmStore {
 }
 
 function cloneSegment(s: CtmSegment): CtmSegment {
-  return { ...s, tags: [...s.tags], toolCalls: s.toolCalls.map(t => ({ ...t })), blockTypes: [...s.blockTypes] }
+  return {
+    ...s,
+    tags: [...s.tags],
+    toolCalls: s.toolCalls.map(t => ({ ...t })),
+    blockTypes: [...s.blockTypes],
+    ...(s.usage !== undefined ? { usage: { ...s.usage } } : {}),
+  }
 }
 
 function estimateTokens(text: string): number {
@@ -246,6 +268,9 @@ export function apply(ctx: any): void {
     else { const txt = prose || reasoning; content = txt.length > CONTENT_CAP ? txt.slice(0, CONTENT_CAP) + '\n…[content truncated]' : txt }
     const seq = typeof ev.seq === 'number' ? ev.seq : index
     const token_count = nodeTokens.has(seq) ? nodeTokens.get(seq)! : estimateTokens(prose || reasoning || toolResult)
+    // Provider-measured usage rides the assistant/message event (one value per
+    // LLM request); every other segment kind has none.
+    const rawUsage = ev.type === 'assistant/message' ? d.usage : undefined
     return {
       id: 'seg-' + seq, seq,
       messageId: ((d.message as { id?: string } | undefined)?.id) || (typeof d.id === 'string' ? d.id : null),
@@ -258,10 +283,11 @@ export function apply(ctx: any): void {
       turn: typeof d.turn === 'number' ? d.turn : null,
       step: typeof d.step === 'number' ? d.step : null,
       toolCalls, blockTypes: blocks.map(b => b && b.type as string).filter(Boolean),
+      ...(rawUsage !== undefined && rawUsage !== null ? { usage: usageFromRaw(rawUsage as Record<string, unknown>) } : {}),
     }
   }
 
-  async function readBase(sessionId: string): Promise<{ segments: CtmSegment[]; usage: Record<string, number> | null; model: { provider: string; model: string } | null }> {
+  async function readBase(sessionId: string): Promise<{ segments: CtmSegment[]; model: { provider: string; model: string } | null }> {
     const sq = ctx.sessionQuery as { readSurface?: (id: string) => Promise<{ events?: Record<string, unknown>[] }> } | undefined
     const events = (await sq?.readSurface?.(sessionId))?.events ?? []
     const nodeTokens = new Map<number, number>()
@@ -317,15 +343,12 @@ export function apply(ctx: any): void {
         turn: null, step: null, toolCalls: [], blockTypes: ['text'],
       })
     }
-    let usage: Record<string, number> | null = null
     let model: { provider: string; model: string } | null = null
     let index = segments.length
     for (const ev of events) {
       segments.push(segmentFromEvent(ev, index, nodeTokens))
       index++
       if (ev.type === 'assistant/message') {
-        const u = (ev.data as { usage?: Record<string, number> } | undefined)?.usage
-        if (u) usage = u
         const src = (ev.data as { message?: { source?: { provider?: string; model?: string } } } | undefined)?.message?.source
         if (src?.provider && src?.model) model = { provider: src.provider, model: src.model }
       }
@@ -360,7 +383,63 @@ export function apply(ctx: any): void {
         if (p !== undefined) { p.turn = maxTurn + 1; p.step = 0 }
       }
     }
-    return { segments, usage, model }
+    return { segments, model }
+  }
+
+  /**
+   * Session-level usage totals. Preferred path: the host's `tokenUsage`
+   * session projection, read synchronously through
+   * `ctx.sessionProjections.snapshot(liveSession)` — incremental over the
+   * complete durable log, so compaction/shadowing cannot drop a request.
+   * Fallback: fold the full log ourselves (the live session's in-memory
+   * events, else `readSession()`); correct but O(log) on every read. The
+   * registry is touched by optional chaining only — it is NOT in `inject`,
+   * so assemblies without dsh-session-projection still load the plugin.
+   */
+  async function readUsageInfo(sessionId: string): Promise<UsageInfo> {
+    const live = liveSession(sessionId)
+    const info: UsageInfo = { ...NO_USAGE }
+    const registry = (ctx as { sessionProjections?: { snapshot?: (s: unknown) => { values?: Record<string, unknown> } } }).sessionProjections
+    if (live !== undefined && registry?.snapshot !== undefined) {
+      try {
+        const values = registry.snapshot(live).values ?? {}
+        const tu = values.tokenUsage as { uncachedInputTokens?: unknown; cacheReadTokens?: unknown; cacheWriteTokens?: unknown; outputTokens?: unknown } | undefined
+        if (typeof tu?.uncachedInputTokens === 'number' && typeof tu.outputTokens === 'number') {
+          info.total = {
+            uncachedInput: tu.uncachedInputTokens,
+            cacheRead: typeof tu.cacheReadTokens === 'number' ? tu.cacheReadTokens : 0,
+            cacheWrite: typeof tu.cacheWriteTokens === 'number' ? tu.cacheWriteTokens : 0,
+            output: tu.outputTokens,
+          }
+          info.usageSource = 'projection'
+        }
+        const cp = values.contextPressure as { pressureTokens?: unknown; projectedTokens?: unknown; contextWindow?: unknown } | undefined
+        const tokens = typeof cp?.projectedTokens === 'number' ? cp.projectedTokens : typeof cp?.pressureTokens === 'number' ? cp.pressureTokens : null
+        if (tokens !== null && typeof cp?.contextWindow === 'number') info.pressure = { tokens, contextWindow: cp.contextWindow }
+      } catch { /* projection unreadable: fall through to the event fold */ }
+    }
+    // The complete log: the live session's in-memory events, else a
+    // readSession() scan (historical sessions — correct but O(log) per read;
+    // the projection path above exists precisely to avoid this).
+    let logEvents: readonly UsageEventLike[] | null = live !== undefined ? live.events : null
+    const fullLog = async (): Promise<readonly UsageEventLike[]> => {
+      if (logEvents !== null) return logEvents
+      try {
+        const rs = ctx.sessionQuery as { readSession?: (id: string) => Promise<{ events?: UsageEventLike[] }> } | undefined
+        logEvents = (await rs?.readSession?.(sessionId))?.events ?? []
+      } catch { logEvents = [] }
+      return logEvents
+    }
+    if (info.usageSource === 'none') {
+      const total = foldUsageEvents(await fullLog())
+      if (total !== null) { info.total = total; info.usageSource = 'events' }
+    }
+    // The last request's usage comes from the full log tail (NOT the surface:
+    // a compaction can shadow the newest assistant message). One pass from
+    // the tail, normally hitting within a few events.
+    info.lastRequest = lastRequestUsage(await fullLog())
+    if (info.lastRequest === null && info.total === null) info.usageSource = 'none'
+    return info
   }
 
   function applyMutations(base: CtmSegment[], st: CtmStore): CtmSegment[] {
@@ -391,7 +470,9 @@ export function apply(ctx: any): void {
       if (pending.has(seg.id)) seg.pending = true
       if (seg.id === 'seg-system' && st.systemOverridePending) seg.pending = true
     }
-    const cacheTokens = st.usage?.cacheReadTokens ?? 0
+    // Cache prediction rides the LAST request's provider-measured cache-read
+    // tokens (not a cumulative figure): it prices the current surface prefix.
+    const cacheTokens = st.usage.lastRequest?.cacheRead ?? 0
     let cum = 0
     let broken = false
     for (const seg of segments) {
@@ -406,11 +487,10 @@ export function apply(ctx: any): void {
       sessionId, version: st.version, head: st.head, capturedThroughSeq: null,
       realtime: realtimeSessions.has(sessionId), segments,
       summary: {
-        inputTokens: st.usage?.inputTokens ?? null,
-        cachedTokens: st.usage?.cacheReadTokens ?? null,
-        outputTokens: st.usage?.outputTokens ?? null,
-        reasoningTokens: st.usage?.reasoningTokens ?? null,
-        inputTokensActual: st.usage != null,
+        total: st.usage.total,
+        lastRequest: st.usage.lastRequest,
+        usageSource: st.usage.usageSource,
+        pressure: st.usage.pressure,
         segmentCount: segments.length,
         activeCount: segments.filter(s => !s.rolledBack).length,
         rolledBackCount: segments.filter(s => s.rolledBack).length,
@@ -433,9 +513,14 @@ export function apply(ctx: any): void {
     if (st.base === null) {
       const info = await readBase(sessionId)
       st.lastBase = info.segments
-      st.usage = info.usage
       st.model = info.model
     }
+    // Usage refreshes on EVERY request (unlike the base, which a restored
+    // snapshot pins): the totals track the live log, not the pinned view.
+    // The projection path makes this cheap; the event-fold fallback is a
+    // full-log scan per request — the documented tradeoff for hosts without
+    // the projection registry.
+    st.usage = await readUsageInfo(sessionId)
     const cur = applyMutations(st.base ?? st.lastBase, st)
     const notice = fn(st, cur)
     return compute(sessionId, st, notice)

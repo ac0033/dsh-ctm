@@ -14534,6 +14534,13 @@ var ctmToolCallSchema = external_exports.object({
   name: external_exports.string().optional(),
   arguments: external_exports.string().optional()
 });
+var ctmUsageSchema = external_exports.object({
+  input: external_exports.number(),
+  cacheRead: external_exports.number(),
+  cacheWrite: external_exports.number().optional(),
+  output: external_exports.number(),
+  reasoning: external_exports.number().optional()
+});
 var ctmSegmentSchema = external_exports.object({
   id: external_exports.string(),
   seq: external_exports.number(),
@@ -14546,6 +14553,7 @@ var ctmSegmentSchema = external_exports.object({
   reasoning: external_exports.string(),
   text: external_exports.string(),
   toolCallId: external_exports.string().nullable(),
+  /** Heuristic estimate (tokenMeter / local density guess) — never provider-measured. */
   token_count: external_exports.number(),
   cache_status: ctmCacheSchema,
   effectiveness: ctmEffectivenessSchema,
@@ -14563,19 +14571,41 @@ var ctmSegmentSchema = external_exports.object({
   turn: external_exports.number().nullable(),
   step: external_exports.number().nullable(),
   toolCalls: external_exports.array(ctmToolCallSchema),
-  blockTypes: external_exports.array(external_exports.string())
+  blockTypes: external_exports.array(external_exports.string()),
+  /** Provider-measured usage of the request that produced this segment; assistant segments only. */
+  usage: ctmUsageSchema.optional()
 });
 var ctmNoticeSchema = external_exports.object({
   kind: external_exports.enum(["ok", "warn", "error"]),
   code: external_exports.string(),
   params: external_exports.record(external_exports.string(), external_exports.union([external_exports.string(), external_exports.number()])).optional()
 });
+var ctmUsageTotalsSchema = external_exports.object({
+  uncachedInput: external_exports.number(),
+  cacheRead: external_exports.number(),
+  cacheWrite: external_exports.number(),
+  output: external_exports.number(),
+  /** Summed reasoning output; only the event fold can see it (the host projection has no reasoning bucket). */
+  reasoning: external_exports.number().optional()
+});
 var ctmSummarySchema = external_exports.object({
-  inputTokens: external_exports.number().nullable(),
-  cachedTokens: external_exports.number().nullable(),
-  outputTokens: external_exports.number().nullable(),
-  reasoningTokens: external_exports.number().nullable(),
-  inputTokensActual: external_exports.boolean(),
+  /** Whole-session cumulative totals; null when no request ever reported usage. */
+  total: ctmUsageTotalsSchema.nullable(),
+  /** The most recent request's usage in the same buckets; null until any usage lands in the log. */
+  lastRequest: ctmUsageTotalsSchema.nullable(),
+  /**
+   * Where `total` came from: the host's `tokenUsage` session projection
+   * (incremental, cheap) or a full-log event fold (fallback when the
+   * projection registry or the live session is unavailable).
+   */
+  usageSource: external_exports.enum(["projection", "events", "none"]),
+  /**
+   * Context occupancy from the host's `contextPressure` projection: the
+   * estimated prompt size of the NEXT request against the newest known route
+   * capacity. Null when the projection is unreadable or either value is
+   * unknown; absent on older hosts.
+   */
+  pressure: external_exports.object({ tokens: external_exports.number(), contextWindow: external_exports.number() }).nullable().optional(),
   segmentCount: external_exports.number(),
   activeCount: external_exports.number(),
   rolledBackCount: external_exports.number(),
@@ -14654,6 +14684,74 @@ function jaccardSimilarity(a, b) {
   let inter = 0;
   for (const x of a) if (b.has(x)) inter++;
   return inter / (a.size + b.size - inter);
+}
+
+// src/usage.ts
+function emptyTotals() {
+  return { uncachedInput: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
+}
+function usageFromRaw(u) {
+  const num = (v) => typeof v === "number" && Number.isFinite(v) ? v : 0;
+  const usage = {
+    input: num(u.inputTokens),
+    cacheRead: num(u.cacheReadTokens),
+    output: num(u.outputTokens)
+  };
+  const cacheWrite = num(u.cacheWriteTokens);
+  if (cacheWrite > 0) usage.cacheWrite = cacheWrite;
+  const reasoning = num(u.reasoningTokens);
+  if (reasoning > 0) usage.reasoning = reasoning;
+  return usage;
+}
+function totalsFromRequest(u) {
+  return {
+    uncachedInput: u.input,
+    cacheRead: u.cacheRead,
+    cacheWrite: u.cacheWrite ?? 0,
+    output: u.output,
+    ...u.reasoning !== void 0 ? { reasoning: u.reasoning } : {}
+  };
+}
+function addTotals(acc, next) {
+  acc.uncachedInput += next.uncachedInput;
+  acc.cacheRead += next.cacheRead;
+  acc.cacheWrite += next.cacheWrite;
+  acc.output += next.output;
+  if (next.reasoning !== void 0) acc.reasoning = (acc.reasoning ?? 0) + next.reasoning;
+  return acc;
+}
+function foldUsageEvents(events) {
+  const byStep = /* @__PURE__ */ new Map();
+  for (const ev of events) {
+    const d = ev.data ?? {};
+    let usage;
+    if (ev.type === "assistant/chunk") {
+      const chunk = d.chunk;
+      if (chunk?.type !== "usage") continue;
+      usage = chunk.usage;
+    } else if (ev.type === "assistant/message") {
+      usage = d.usage;
+    } else {
+      continue;
+    }
+    if (usage === void 0) continue;
+    const turn = typeof d.turn === "number" ? d.turn : 0;
+    const step = typeof d.step === "number" ? d.step : 0;
+    byStep.set(`${turn}:${step}`, totalsFromRequest(usageFromRaw(usage)));
+  }
+  if (byStep.size === 0) return null;
+  let total = emptyTotals();
+  for (const buckets of byStep.values()) total = addTotals(total, buckets);
+  return total;
+}
+function lastRequestUsage(events) {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev?.type !== "assistant/message") continue;
+    const usage = ev.data?.usage;
+    if (usage !== void 0) return totalsFromRequest(usageFromRaw(usage));
+  }
+  return null;
 }
 
 // src/surface-edits.ts
@@ -14838,6 +14936,7 @@ var MAX_TRASH_PER_SESSION = 50;
 var REDUNDANT_SIMILARITY = 0.92;
 var RECENT_TOOL_WINDOW = 6;
 var STRONG_STALE_ASSISTANT_AFTER = 3;
+var NO_USAGE = { total: null, lastRequest: null, usageSource: "none", pressure: null };
 function storeFor(map2, sessionId) {
   const existing = map2.get(sessionId);
   if (existing) {
@@ -14857,7 +14956,7 @@ function storeFor(map2, sessionId) {
     snapshots: [],
     head: "live",
     version: 0,
-    usage: null,
+    usage: { ...NO_USAGE },
     model: null,
     queue: [],
     appliedEdits: [],
@@ -14873,7 +14972,13 @@ function storeFor(map2, sessionId) {
   return s;
 }
 function cloneSegment(s) {
-  return { ...s, tags: [...s.tags], toolCalls: s.toolCalls.map((t) => ({ ...t })), blockTypes: [...s.blockTypes] };
+  return {
+    ...s,
+    tags: [...s.tags],
+    toolCalls: s.toolCalls.map((t) => ({ ...t })),
+    blockTypes: [...s.blockTypes],
+    ...s.usage !== void 0 ? { usage: { ...s.usage } } : {}
+  };
 }
 function estimateTokens(text) {
   if (!text) return 0;
@@ -15039,6 +15144,7 @@ function apply(ctx) {
     }
     const seq = typeof ev.seq === "number" ? ev.seq : index;
     const token_count = nodeTokens.has(seq) ? nodeTokens.get(seq) : estimateTokens(prose || reasoning || toolResult);
+    const rawUsage = ev.type === "assistant/message" ? d.usage : void 0;
     return {
       id: "seg-" + seq,
       seq,
@@ -15066,7 +15172,8 @@ function apply(ctx) {
       turn: typeof d.turn === "number" ? d.turn : null,
       step: typeof d.step === "number" ? d.step : null,
       toolCalls,
-      blockTypes: blocks.map((b) => b && b.type).filter(Boolean)
+      blockTypes: blocks.map((b) => b && b.type).filter(Boolean),
+      ...rawUsage !== void 0 && rawUsage !== null ? { usage: usageFromRaw(rawUsage) } : {}
     };
   }
   async function readBase(sessionId) {
@@ -15137,15 +15244,12 @@ function apply(ctx) {
         blockTypes: ["text"]
       });
     }
-    let usage = null;
     let model = null;
     let index = segments.length;
     for (const ev of events) {
       segments.push(segmentFromEvent(ev, index, nodeTokens));
       index++;
       if (ev.type === "assistant/message") {
-        const u = ev.data?.usage;
-        if (u) usage = u;
         const src = ev.data?.message?.source;
         if (src?.provider && src?.model) model = { provider: src.provider, model: src.model };
       }
@@ -15178,7 +15282,52 @@ function apply(ctx) {
         }
       }
     }
-    return { segments, usage, model };
+    return { segments, model };
+  }
+  async function readUsageInfo(sessionId) {
+    const live = liveSession(sessionId);
+    const info = { ...NO_USAGE };
+    const registry2 = ctx.sessionProjections;
+    if (live !== void 0 && registry2?.snapshot !== void 0) {
+      try {
+        const values = registry2.snapshot(live).values ?? {};
+        const tu = values.tokenUsage;
+        if (typeof tu?.uncachedInputTokens === "number" && typeof tu.outputTokens === "number") {
+          info.total = {
+            uncachedInput: tu.uncachedInputTokens,
+            cacheRead: typeof tu.cacheReadTokens === "number" ? tu.cacheReadTokens : 0,
+            cacheWrite: typeof tu.cacheWriteTokens === "number" ? tu.cacheWriteTokens : 0,
+            output: tu.outputTokens
+          };
+          info.usageSource = "projection";
+        }
+        const cp = values.contextPressure;
+        const tokens = typeof cp?.projectedTokens === "number" ? cp.projectedTokens : typeof cp?.pressureTokens === "number" ? cp.pressureTokens : null;
+        if (tokens !== null && typeof cp?.contextWindow === "number") info.pressure = { tokens, contextWindow: cp.contextWindow };
+      } catch {
+      }
+    }
+    let logEvents = live !== void 0 ? live.events : null;
+    const fullLog = async () => {
+      if (logEvents !== null) return logEvents;
+      try {
+        const rs = ctx.sessionQuery;
+        logEvents = (await rs?.readSession?.(sessionId))?.events ?? [];
+      } catch {
+        logEvents = [];
+      }
+      return logEvents;
+    };
+    if (info.usageSource === "none") {
+      const total = foldUsageEvents(await fullLog());
+      if (total !== null) {
+        info.total = total;
+        info.usageSource = "events";
+      }
+    }
+    info.lastRequest = lastRequestUsage(await fullLog());
+    if (info.lastRequest === null && info.total === null) info.usageSource = "none";
+    return info;
   }
   function applyMutations(base, st) {
     const out = [];
@@ -15210,7 +15359,7 @@ function apply(ctx) {
       if (pending.has(seg.id)) seg.pending = true;
       if (seg.id === "seg-system" && st.systemOverridePending) seg.pending = true;
     }
-    const cacheTokens = st.usage?.cacheReadTokens ?? 0;
+    const cacheTokens = st.usage.lastRequest?.cacheRead ?? 0;
     let cum = 0;
     let broken = false;
     for (const seg of segments) {
@@ -15236,11 +15385,10 @@ function apply(ctx) {
       realtime: realtimeSessions.has(sessionId),
       segments,
       summary: {
-        inputTokens: st.usage?.inputTokens ?? null,
-        cachedTokens: st.usage?.cacheReadTokens ?? null,
-        outputTokens: st.usage?.outputTokens ?? null,
-        reasoningTokens: st.usage?.reasoningTokens ?? null,
-        inputTokensActual: st.usage != null,
+        total: st.usage.total,
+        lastRequest: st.usage.lastRequest,
+        usageSource: st.usage.usageSource,
+        pressure: st.usage.pressure,
         segmentCount: segments.length,
         activeCount: segments.filter((s) => !s.rolledBack).length,
         rolledBackCount: segments.filter((s) => s.rolledBack).length,
@@ -15258,9 +15406,9 @@ function apply(ctx) {
     if (st.base === null) {
       const info = await readBase(sessionId);
       st.lastBase = info.segments;
-      st.usage = info.usage;
       st.model = info.model;
     }
+    st.usage = await readUsageInfo(sessionId);
     const cur = applyMutations(st.base ?? st.lastBase, st);
     const notice = fn(st, cur);
     return compute(sessionId, st, notice);

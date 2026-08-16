@@ -1,5 +1,6 @@
 /** Localized label/tooltip helpers shared by the extracted view components. */
-import type { CtmSegment } from '../contract'
+import type { CtmSegment, CtmUsageTotals } from '../contract'
+import { billedInput, cacheHitRate } from '../usage'
 import type { CtmKey } from './locales'
 
 export type TFunc = (k: CtmKey) => string
@@ -21,7 +22,45 @@ export const effTip = (t: TFunc, eff: string): string =>
 
 export const fmtTime = (tm: number): string => (tm ? new Date(tm).toLocaleTimeString() : '')
 
-export const fmtNum = (n: number | null | undefined): string => (n == null ? '—' : String(n))
+/** Fill `{key}` slots in a locale template (same convention as host notices). */
+export const tpl = (s: string, params: Record<string, string | number>): string =>
+  s.replace(/\{(\w+)\}/g, (slot, name) => (params[name] !== undefined ? String(params[name]) : slot))
+
+/**
+ * Compact token count: 517 / 12.2K / 517K / 1.2M (one decimal under three
+ * digits) — the same rounding the webUI StatsLine uses.
+ */
+export function formatTokens(n: number): string {
+  const scaled = (v: number): string =>
+    v >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10)
+  if (n < 1_000) return String(n)
+  if (n < 1_000_000) return `${scaled(n / 1_000)}K`
+  return `${scaled(n / 1_000_000)}M`
+}
+
+export const fmtTokens = (n: number | null | undefined): string => (n == null ? '—' : formatTokens(n))
+
+/** Cache-hit rate as a display string; '—' until anything was billed. */
+export const fmtHitRate = (totals: CtmUsageTotals | null | undefined): string => {
+  if (totals == null) return '—'
+  const rate = cacheHitRate(totals)
+  return rate === null ? '—' : `${Math.round(rate * 100)}%`
+}
+
+/**
+ * One compact usage line over MECE totals, e.g. zh "输入 12.3K · 命中 91% ·
+ * 输出 1.2K" / en "12.3K in · 91% hit · 1.2K out". The hit segment drops out
+ * when nothing was billed or the caller passes `withHit: false`.
+ */
+export function usageLine(t: TFunc, totals: CtmUsageTotals, withHit: boolean): string {
+  const parts = [tpl(t('usageIn'), { n: formatTokens(billedInput(totals)) })]
+  if (withHit) {
+    const rate = cacheHitRate(totals)
+    if (rate !== null) parts.push(tpl(t('usageHit'), { n: `${Math.round(rate * 100)}%` }))
+  }
+  parts.push(tpl(t('usageOut'), { n: formatTokens(totals.output) }))
+  return parts.join(' · ')
+}
 
 export const sourceKindLabel = (t: TFunc, seg: CtmSegment): string => {
   if (seg.source === 'system_inject') {

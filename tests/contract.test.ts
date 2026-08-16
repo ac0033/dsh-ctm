@@ -25,8 +25,11 @@ function makeState(overrides: Partial<CtmState> = {}): CtmState {
     sessionId: 's1', version: 3, head: 'live', capturedThroughSeq: null, realtime: false,
     segments: [makeSegment()],
     summary: {
-      inputTokens: 100, cachedTokens: 80, outputTokens: 10, reasoningTokens: 5,
-      inputTokensActual: true, segmentCount: 1, activeCount: 1, rolledBackCount: 0,
+      total: { uncachedInput: 20, cacheRead: 80, cacheWrite: 0, output: 10, reasoning: 5 },
+      lastRequest: { uncachedInput: 20, cacheRead: 80, cacheWrite: 0, output: 10 },
+      usageSource: 'projection',
+      pressure: { tokens: 100, contextWindow: 128000 },
+      segmentCount: 1, activeCount: 1, rolledBackCount: 0,
       model: { provider: 'p', model: 'm' },
     },
     snapshots: [], trash: [], notice: null,
@@ -75,6 +78,42 @@ describe('ctmResponseSchema', () => {
   it('parses the error envelope', () => {
     const parsed = ctmResponseSchema.parse({ ok: false, error: 'boom' })
     expect(parsed).toEqual({ ok: false, error: 'boom' })
+  })
+})
+
+describe('ctmStateSchema usage fields', () => {
+  it('accepts a segment carrying provider usage and round-trips it', () => {
+    const seg = makeSegment({
+      role: 'assistant', source: 'model_output',
+      usage: { input: 100, cacheRead: 2000, cacheWrite: 3, output: 50, reasoning: 20 },
+    })
+    const parsed = ctmStateSchema.parse(JSON.parse(JSON.stringify(makeState({ segments: [seg] }))))
+    expect(parsed.segments[0]?.usage).toEqual({ input: 100, cacheRead: 2000, cacheWrite: 3, output: 50, reasoning: 20 })
+  })
+
+  it('accepts a segment without usage (non-assistant roles)', () => {
+    const parsed = ctmStateSchema.parse(makeState())
+    expect(parsed.segments[0]?.usage).toBeUndefined()
+  })
+
+  it('accepts empty usage read-outs (null totals, none source) and a missing pressure', () => {
+    const parsed = ctmStateSchema.parse(makeState({
+      summary: {
+        total: null, lastRequest: null, usageSource: 'none',
+        segmentCount: 1, activeCount: 1, rolledBackCount: 0, model: null,
+      },
+    }))
+    expect(parsed.summary.usageSource).toBe('none')
+    expect(parsed.summary.pressure).toBeUndefined()
+  })
+
+  it('rejects an unknown usageSource', () => {
+    expect(() => ctmStateSchema.parse(makeState({
+      summary: {
+        total: null, lastRequest: null, usageSource: 'magic' as never,
+        segmentCount: 1, activeCount: 1, rolledBackCount: 0, model: null,
+      },
+    }))).toThrow()
   })
 })
 

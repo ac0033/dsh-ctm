@@ -128,9 +128,11 @@ var zh = {
   noSession: "\u65E0\u53EF\u7528\u4F1A\u8BDD",
   opFailed: "\u64CD\u4F5C\u5931\u8D25",
   totalTokens: "\u8F93\u5165 Token",
+  uncachedInput: "\u672A\u547D\u4E2D\u8F93\u5165",
   cacheHit: "\u7F13\u5B58\u547D\u4E2D",
+  cacheWrite: "\u7F13\u5B58\u5199\u5165",
+  cacheHitRate: "\u7F13\u5B58\u547D\u4E2D\u7387",
   outputTokens: "\u8F93\u51FA Token",
-  reasoningTokens: "\u63A8\u7406 Token",
   model: "\u6A21\u578B",
   refresh: "\u5237\u65B0",
   reset: "\u91CD\u7F6E",
@@ -258,7 +260,26 @@ var zh = {
   expTurn: "\u4E00\u4E2A\u8F6E\u6B21 = \u4E00\u6B21\u300C\u7528\u6237\u8F93\u5165 \u2192 \u52A9\u624B\u591A\u6B65\u56DE\u590D\u300D\u7684\u5B8C\u6574\u56DE\u5408\u3002",
   expSegCount: "\u8FD9\u4E2A\u6570\u5B57\u662F\u8BE5\u8F6E\u6B21\u91CC\u5305\u542B\u7684\u4E0A\u4E0B\u6587\u7247\u6BB5\u6761\u6570\uFF08\u6D88\u606F / \u5DE5\u5177\u8C03\u7528 / \u5DE5\u5177\u7ED3\u679C\uFF09\u3002",
   expSystem: "\u7CFB\u7EDF\u81EA\u52A8\u6CE8\u5165\u7684\u63D0\u793A\u5185\u5BB9\uFF08\u5982\u8FD0\u884C\u4E0A\u4E0B\u6587\u3001\u6280\u80FD\u76EE\u5F55\uFF09\uFF0C\u6A21\u578B\u6BCF\u6B21\u63A8\u7406\u90FD\u4F1A\u770B\u5230\u3002\u9664\u521D\u59CB\u7CFB\u7EDF\u63D0\u793A\u8BCD\u53EF\u66FF\u6362\u5916\uFF0C\u5176\u4F59\u4E0D\u53EF\u7F16\u8F91\u6216\u5220\u9664\u3002",
-  expUserInput: "\u4F60\u53D1\u7ED9\u6A21\u578B\u7684\u5B9E\u9645\u8BF7\u6C42\u5185\u5BB9\u3002"
+  expUserInput: "\u4F60\u53D1\u7ED9\u6A21\u578B\u7684\u5B9E\u9645\u8BF7\u6C42\u5185\u5BB9\u3002",
+  tipUncachedInput: "\u672A\u547D\u4E2D\u7F13\u5B58\u7684\u8F93\u5165 token\uFF1Aprovider \u5B9E\u6D4B\uFF0C\u5168\u4F1A\u8BDD\u7D2F\u8BA1\uFF08\u542B\u88AB\u538B\u7F29/\u6539\u5199\u7684\u8BF7\u6C42\uFF09\u3002",
+  tipCacheReadKpi: "\u547D\u4E2D\u524D\u7F00\u7F13\u5B58\u7684\u8F93\u5165 token\uFF1Aprovider \u5B9E\u6D4B\uFF0C\u5168\u4F1A\u8BDD\u7D2F\u8BA1\u3002",
+  tipCacheWriteKpi: "\u5199\u5165\u7F13\u5B58\u7684 token\uFF1Aprovider \u5B9E\u6D4B\uFF0C\u5168\u4F1A\u8BDD\u7D2F\u8BA1\u3002",
+  tipOutputKpi: "\u8F93\u51FA token\uFF08\u542B\u63A8\u7406\uFF09\uFF1Aprovider \u5B9E\u6D4B\uFF0C\u5168\u4F1A\u8BDD\u7D2F\u8BA1\u3002",
+  reasoningIncluded: "\u5176\u4E2D\u63A8\u7406 {n}",
+  tipCacheHitRate: "\u7F13\u5B58\u547D\u4E2D\u7387 = \u7F13\u5B58\u547D\u4E2D \xF7\uFF08\u672A\u547D\u4E2D + \u547D\u4E2D + \u5199\u5165\uFF09\uFF0C\u5168\u4F1A\u8BDD\u7D2F\u8BA1\u3002",
+  sourceProjection: "\u6570\u636E\u6765\u6E90\uFF1AtokenUsage \u4F1A\u8BDD\u6295\u5F71\uFF08\u968F\u65E5\u5FD7\u589E\u91CF\u6298\u53E0\uFF09\u3002",
+  sourceEvents: "\u6570\u636E\u6765\u6E90\uFF1A\u5B8C\u6574\u4F1A\u8BDD\u65E5\u5FD7\u9010\u6761\u6C42\u548C\uFF08\u6295\u5F71\u4E0D\u53EF\u7528\u65F6\u7684\u56DE\u9000\uFF0C\u8F83\u6162\uFF09\u3002",
+  noUsageYet: "\u5C1A\u65E0\u53EF\u8BA1\u91CF\u7684\u8BF7\u6C42\uFF08provider \u672A\u4E0A\u62A5 usage\uFF09\u3002",
+  lastRequestPrompt: "\u6700\u8FD1\u4E00\u6B21\u8BF7\u6C42 prompt \u603B\u91CF {n}",
+  pressureTip: "\u5F53\u524D\u4E0A\u4E0B\u6587\u7EA6\u5360\u7A97\u53E3 {p}%\uFF08\u7EA6 {t} / {w}\uFF09",
+  usageIn: "\u8F93\u5165 {n}",
+  usageHit: "\u547D\u4E2D {n}",
+  usageOut: "\u8F93\u51FA {n}",
+  turnUsageTip: "\u8BE5\u8F6E\u5404\u6B65\u8BF7\u6C42\u5B9E\u6D4B\u4E4B\u548C\uFF08\u5BF9\u8BE5\u8F6E assistant \u7247\u6BB5\u7684 usage \u6C42\u548C\uFF09\u3002",
+  stepUsageTip: "\u8FD9\u4E00\u6B21 LLM \u8BF7\u6C42\u7684 provider \u5B9E\u6D4B\uFF08\u8F93\u5165 = \u672A\u547D\u4E2D + \u7F13\u5B58\u547D\u4E2D + \u7F13\u5B58\u5199\u5165\uFF09\u3002",
+  estimatedTip: "\u4F30\u7B97\u503C\uFF1A\u7247\u6BB5 token \u6570\u4E3A\u672C\u5730\u542F\u53D1\u5F0F\u4F30\u8BA1\uFF1B\u53EA\u6709\u8BF7\u6C42\u7EA7\u603B\u91CF\uFF08\u6B65\u9AA4 / \u8F6E\u6B21 / \u9876\u90E8 KPI\uFF09\u662F provider \u5B9E\u6D4B\u3002",
+  seqTip: "\u7247\u6BB5\u5E8F\u53F7\uFF1A\u8BE5\u7247\u6BB5\u5728\u771F\u5B9E\u4EA4\u4E92\u6D41\u7A0B\u4E2D\u7684\u987A\u5E8F\u4F4D\u7F6E\uFF0C\u4E0E\u300C\u8F68\u8FF9\u300D\u9875\u7684\u987A\u5E8F\u4E00\u81F4\u3002",
+  seq0Tip: "\u7247\u6BB5 0\uFF1A\u521D\u59CB\u7CFB\u7EDF\u63D0\u793A\u8BCD\u2014\u2014\u6BCF\u6B21\u8BF7\u6C42\u90FD\u968F\u5C01\u5957\u539F\u6837\u91CD\u53D1\uFF0C\u4E0D\u5360\u4EA4\u4E92\u5E8F\u53F7\u3002"
 };
 var en = {
   "view.ctm": "Context",
@@ -268,9 +289,11 @@ var en = {
   noSession: "No active session",
   opFailed: "Operation failed",
   totalTokens: "Input tokens",
+  uncachedInput: "Uncached input",
   cacheHit: "Cache hit",
+  cacheWrite: "Cache write",
+  cacheHitRate: "Cache hit rate",
   outputTokens: "Output tokens",
-  reasoningTokens: "Reasoning tokens",
   model: "Model",
   refresh: "Refresh",
   reset: "Reset",
@@ -398,7 +421,26 @@ var en = {
   expTurn: 'A turn = one full "user input \u2192 assistant multi-step reply" round.',
   expSegCount: "How many context segments (messages / tool calls / tool results) this round contains.",
   expSystem: "System-injected prompt content (runtime context, skill catalog) the model sees every step. Only the initial system prompt is replaceable; the rest is read-only.",
-  expUserInput: "The actual request you sent to the model."
+  expUserInput: "The actual request you sent to the model.",
+  tipUncachedInput: "Prompt tokens that missed the cache: provider-measured, cumulative over the whole session log (compacted/rewritten requests included).",
+  tipCacheReadKpi: "Prompt tokens served from the prefix cache: provider-measured, cumulative over the whole session log.",
+  tipCacheWriteKpi: "Tokens written to the cache: provider-measured, cumulative over the whole session log.",
+  tipOutputKpi: "Output tokens (reasoning included): provider-measured, cumulative over the whole session log.",
+  reasoningIncluded: "of which reasoning {n}",
+  tipCacheHitRate: "Cache hit rate = cache read \xF7 (uncached + read + write), cumulative over the session.",
+  sourceProjection: "Source: the tokenUsage session projection (folded incrementally over the log).",
+  sourceEvents: "Source: a full session-log summation (fallback when the projection is unavailable; slower).",
+  noUsageYet: "No billable request yet (the provider has not reported usage).",
+  lastRequestPrompt: "Last request prompt total {n}",
+  pressureTip: "Context now occupies ~{p}% of the window (~{t} / {w})",
+  usageIn: "{n} in",
+  usageHit: "{n} hit",
+  usageOut: "{n} out",
+  turnUsageTip: "Sum of this turn's per-request provider measurements (over the turn's assistant segments).",
+  stepUsageTip: "Provider-measured usage of this single LLM request (input = uncached + cache read + cache write).",
+  estimatedTip: "Estimate: segment token counts come from a local heuristic; only request-level totals (step / turn / top KPIs) are provider-measured.",
+  seqTip: "Segment index: this segment's position in the real interaction flow, matching the Trajectory view order.",
+  seq0Tip: "Segment 0: the initial system prompt \u2014 re-sent verbatim with every request envelope, holding no interaction index of its own."
 };
 
 // src/client/view.tsx
@@ -477,6 +519,43 @@ function groupNodes(segments) {
   return nodes;
 }
 
+// src/usage.ts
+function emptyTotals() {
+  return { uncachedInput: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
+}
+function totalsFromRequest(u) {
+  return {
+    uncachedInput: u.input,
+    cacheRead: u.cacheRead,
+    cacheWrite: u.cacheWrite ?? 0,
+    output: u.output,
+    ...u.reasoning !== void 0 ? { reasoning: u.reasoning } : {}
+  };
+}
+function addTotals(acc, next) {
+  acc.uncachedInput += next.uncachedInput;
+  acc.cacheRead += next.cacheRead;
+  acc.cacheWrite += next.cacheWrite;
+  acc.output += next.output;
+  if (next.reasoning !== void 0) acc.reasoning = (acc.reasoning ?? 0) + next.reasoning;
+  return acc;
+}
+function billedInput(t) {
+  return t.uncachedInput + t.cacheRead + t.cacheWrite;
+}
+function cacheHitRate(t) {
+  const d = billedInput(t);
+  return d === 0 ? null : t.cacheRead / d;
+}
+function sumSegmentUsage(segments) {
+  let total = null;
+  for (const seg of segments) {
+    if (seg.usage === void 0) continue;
+    total = addTotals(total ?? emptyTotals(), totalsFromRequest(seg.usage));
+  }
+  return total;
+}
+
 // src/client/labels.ts
 var roleLabel = (t, role) => role === "system" ? t("roleSystem") : role === "user" ? t("roleUser") : role === "assistant" ? t("roleAssistant") : role === "tool" ? t("roleTool") : role;
 var cacheLabel = (t, cs) => cs === "hit" ? t("cacheHitLabel") : cs === "miss" ? t("cacheMissLabel") : cs === "partial" ? t("cachePartial") : t("cacheUnknown");
@@ -484,7 +563,27 @@ var effLabel = (t, eff) => eff === "effective" ? t("effEffective") : eff === "re
 var cacheTip = (t, cs) => cs === "hit" ? t("tipCacheHit") : cs === "miss" ? t("tipCacheMiss") : cs === "partial" ? t("tipCachePartial") : "";
 var effTip = (t, eff) => eff === "effective" ? t("tipEffective") : eff === "redundant" ? t("tipRedundant") : eff === "stale" ? t("tipStale") : eff === "injected" ? t("tipInjected") : "";
 var fmtTime = (tm) => tm ? new Date(tm).toLocaleTimeString() : "";
-var fmtNum = (n) => n == null ? "\u2014" : String(n);
+var tpl = (s, params) => s.replace(/\{(\w+)\}/g, (slot, name) => params[name] !== void 0 ? String(params[name]) : slot);
+function formatTokens(n) {
+  const scaled = (v) => v >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10);
+  if (n < 1e3) return String(n);
+  if (n < 1e6) return `${scaled(n / 1e3)}K`;
+  return `${scaled(n / 1e6)}M`;
+}
+var fmtHitRate = (totals) => {
+  if (totals == null) return "\u2014";
+  const rate = cacheHitRate(totals);
+  return rate === null ? "\u2014" : `${Math.round(rate * 100)}%`;
+};
+function usageLine(t, totals, withHit) {
+  const parts = [tpl(t("usageIn"), { n: formatTokens(billedInput(totals)) })];
+  if (withHit) {
+    const rate = cacheHitRate(totals);
+    if (rate !== null) parts.push(tpl(t("usageHit"), { n: `${Math.round(rate * 100)}%` }));
+  }
+  parts.push(tpl(t("usageOut"), { n: formatTokens(totals.output) }));
+  return parts.join(" \xB7 ");
+}
 var sourceKindLabel = (t, seg) => {
   if (seg.source === "system_inject") {
     if (seg.sourceKind === "system") return t("initialSystemPrompt");
@@ -531,8 +630,8 @@ var STATIC_KEYS = {
   undone_queued: "undoneQueued",
   undo_unavailable: "undoUnavailable"
 };
-function renderTemplate(tpl, params) {
-  return tpl.replace(/\{(\w+)\}/g, (slot, name) => params[name] !== void 0 ? String(params[name]) : slot);
+function renderTemplate(tpl2, params) {
+  return tpl2.replace(/\{(\w+)\}/g, (slot, name) => params[name] !== void 0 ? String(params[name]) : slot);
 }
 function noticeText(notice, t) {
   const code = notice.code;
@@ -591,26 +690,50 @@ function Legend({ sh }) {
 
 // src/client/toolbar.tsx
 var import_jsx_runtime2 = require("react/jsx-runtime");
+function usageNotes(sh, sum) {
+  const t = sh.t;
+  const notes = [
+    sum.usageSource === "projection" ? t("sourceProjection") : sum.usageSource === "events" ? t("sourceEvents") : t("noUsageYet")
+  ];
+  if (sum.lastRequest) notes.push(tpl(t("lastRequestPrompt"), { n: formatTokens(billedInput(sum.lastRequest)) }));
+  if (sum.pressure) {
+    notes.push(tpl(t("pressureTip"), {
+      p: Math.min(100, Math.round(sum.pressure.tokens / sum.pressure.contextWindow * 100)),
+      t: formatTokens(sum.pressure.tokens),
+      w: formatTokens(sum.pressure.contextWindow)
+    }));
+  }
+  return notes;
+}
 function Toolbar({ sh, h }) {
   const t = sh.t;
   const sum = sh.state.summary;
+  const total = sum?.total ?? null;
+  const active = total !== null && (billedInput(total) > 0 || total.output > 0);
+  const shown = active ? total : null;
+  const tip = (base) => sum ? [base, ...usageNotes(sh, sum)].join("\n") : base;
+  const outputTip = shown !== null && shown.reasoning !== void 0 ? t("tipOutputKpi") + "\n" + tpl(t("reasoningIncluded"), { n: formatTokens(shown.reasoning) }) : t("tipOutputKpi");
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ctm-sticky", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-summary", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpis", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("totalTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.inputTokens) })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", title: tip(t("tipUncachedInput")), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("uncachedInput") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: shown ? formatTokens(shown.uncachedInput) : "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", title: tip(t("tipCacheReadKpi")), children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("cacheHit") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.cachedTokens) })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: shown ? formatTokens(shown.cacheRead) : "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+      shown !== null && shown.cacheWrite > 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", title: tip(t("tipCacheWriteKpi")), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("cacheWrite") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: formatTokens(shown.cacheWrite) })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", title: tip(outputTip), children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("outputTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.outputTokens) })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: shown ? formatTokens(shown.output) : "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("reasoningTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.reasoningTokens) })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", title: tip(t("tipCacheHitRate")), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("cacheHitRate") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtHitRate(shown) })
       ] }),
       sum?.model && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("model") }),
@@ -633,10 +756,10 @@ function Toolbar({ sh, h }) {
 }
 function MinBar({ sh, onExpand, onToggleLang }) {
   const t = sh.t;
-  const sum = sh.state.summary;
+  const total = sh.state.summary?.total ?? null;
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-minbar", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn", onClick: onExpand, children: "\u25B4 " + t("expandView") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-hint", children: `Context \xB7 ${t("totalTokens")} ${fmtNum(sum?.inputTokens)} \xB7 ${t("cacheHit")} ${fmtNum(sum?.cachedTokens)}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-hint", children: `Context \xB7 ${t("totalTokens")} ${total ? formatTokens(billedInput(total)) : "\u2014"} \xB7 ${t("cacheHitRate")} ${fmtHitRate(total)}` }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Legend, { sh }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: onToggleLang, children: t("lang") })
   ] }) });
@@ -766,13 +889,11 @@ function SegmentCard({ seg, sh }) {
   const isEditing = sh.editing?.id === seg.id;
   const eff = seg.effectiveness || "effective";
   const thinkOpen = sh.isOpen("think", seg.id);
-  const meta3 = [
+  const head = [
     roleLabel(t, seg.role),
-    seg.turn != null ? `${t("turn")} ${seg.turn}${seg.step != null ? "." + seg.step : ""}` : null,
-    `#${seg.turn_index}`,
-    fmtTime(seg.created_at),
-    seg.edited ? t("edited") : null
+    seg.turn != null ? `${t("turn")} ${seg.turn}${seg.step != null ? "." + seg.step : ""}` : null
   ].filter(Boolean).join(" \xB7 ");
+  const time3 = fmtTime(seg.created_at);
   const effPrefix = seg.strongStale ? "\u26A0 " : eff === "redundant" ? "\u2248 " : "";
   const body = isEditing ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-hint", children: [
     t("editing"),
@@ -794,7 +915,11 @@ function SegmentCard({ seg, sh }) {
   ] });
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `ctm-card eff-${eff}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-meta", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: meta3 }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: head }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { title: seg.id === "seg-system" ? t("seq0Tip") : t("seqTip"), children: `#${seg.turn_index}` }),
+      time3 && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: time3 }),
+      seg.edited && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: t("edited") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { title: t("estimatedTip"), children: `\u2248${formatTokens(seg.token_count)}` }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "ctm-badge cache", title: cacheTip(t, seg.cache_status), children: cacheLabel(t, seg.cache_status) }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: `ctm-badge eff-${eff}`, title: effTip(t, eff), children: effPrefix + effLabel(t, eff) }),
       seg.pending && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "ctm-badge pending", title: t("pendingTip"), children: t("pending") })
@@ -841,6 +966,7 @@ function StepSection({ step, sh }) {
   const open = sh.isOpen("steps", step.key);
   const baseLabel = step.sourceKind ? sourceKindLabel(t, segs[0]) : roleLabel(t, step.label);
   const label = step.num != null ? `${baseLabel} ${step.num}` : step.label.startsWith("step-") ? `${t("step")} ${step.label.slice(5)}` : baseLabel;
+  const stepUsage = sumSegmentUsage(segs);
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step", children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step-head", onClick: () => sh.toggle("steps", step.key), children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
@@ -850,6 +976,10 @@ function StepSection({ step, sh }) {
         other.length ? ` \xB7 ${other.length}` : ""
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { className: "ctm-node-sub", children: [
+        stepUsage && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { title: t("stepUsageTip"), children: [
+          usageLine(t, stepUsage, false),
+          " \xB7 "
+        ] }),
         step.turn != null ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "ctm-turn-label", children: `${t("turn")} ${step.turn}` }) : null,
         " ",
         segs.length,
@@ -865,6 +995,7 @@ function TurnNode({ node, sh }) {
   const open = sh.isOpen("turns", node.key);
   const explainOpen = sh.isOpen("explain", node.key) || sh.explainHover === node.key;
   const title = node.kind === "system" ? t("systemInput") : node.kind === "user" ? t("userInput") : `${t("turn")} ${node.turn}`;
+  const turnUsage = node.kind === "turn" ? sumSegmentUsage(node.segments) : null;
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: `ctm-node ${node.kind === "system" ? "system" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-title-wrap", onClick: () => sh.toggle("turns", node.key), children: [
@@ -872,7 +1003,8 @@ function TurnNode({ node, sh }) {
         /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-sub", children: [
           node.segments.length,
           " ",
-          t("seg")
+          t("seg"),
+          turnUsage && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { title: t("turnUsageTip"), children: " \xB7 " + usageLine(t, turnUsage, true) })
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "ctm-node-actions", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-explain-wrap", onMouseEnter: () => sh.setExplainHover(node.key), onMouseLeave: () => sh.setExplainHover(null), children: [
@@ -15646,6 +15778,13 @@ var ctmToolCallSchema = external_exports.object({
   name: external_exports.string().optional(),
   arguments: external_exports.string().optional()
 });
+var ctmUsageSchema = external_exports.object({
+  input: external_exports.number(),
+  cacheRead: external_exports.number(),
+  cacheWrite: external_exports.number().optional(),
+  output: external_exports.number(),
+  reasoning: external_exports.number().optional()
+});
 var ctmSegmentSchema = external_exports.object({
   id: external_exports.string(),
   seq: external_exports.number(),
@@ -15658,6 +15797,7 @@ var ctmSegmentSchema = external_exports.object({
   reasoning: external_exports.string(),
   text: external_exports.string(),
   toolCallId: external_exports.string().nullable(),
+  /** Heuristic estimate (tokenMeter / local density guess) — never provider-measured. */
   token_count: external_exports.number(),
   cache_status: ctmCacheSchema,
   effectiveness: ctmEffectivenessSchema,
@@ -15675,19 +15815,41 @@ var ctmSegmentSchema = external_exports.object({
   turn: external_exports.number().nullable(),
   step: external_exports.number().nullable(),
   toolCalls: external_exports.array(ctmToolCallSchema),
-  blockTypes: external_exports.array(external_exports.string())
+  blockTypes: external_exports.array(external_exports.string()),
+  /** Provider-measured usage of the request that produced this segment; assistant segments only. */
+  usage: ctmUsageSchema.optional()
 });
 var ctmNoticeSchema = external_exports.object({
   kind: external_exports.enum(["ok", "warn", "error"]),
   code: external_exports.string(),
   params: external_exports.record(external_exports.string(), external_exports.union([external_exports.string(), external_exports.number()])).optional()
 });
+var ctmUsageTotalsSchema = external_exports.object({
+  uncachedInput: external_exports.number(),
+  cacheRead: external_exports.number(),
+  cacheWrite: external_exports.number(),
+  output: external_exports.number(),
+  /** Summed reasoning output; only the event fold can see it (the host projection has no reasoning bucket). */
+  reasoning: external_exports.number().optional()
+});
 var ctmSummarySchema = external_exports.object({
-  inputTokens: external_exports.number().nullable(),
-  cachedTokens: external_exports.number().nullable(),
-  outputTokens: external_exports.number().nullable(),
-  reasoningTokens: external_exports.number().nullable(),
-  inputTokensActual: external_exports.boolean(),
+  /** Whole-session cumulative totals; null when no request ever reported usage. */
+  total: ctmUsageTotalsSchema.nullable(),
+  /** The most recent request's usage in the same buckets; null until any usage lands in the log. */
+  lastRequest: ctmUsageTotalsSchema.nullable(),
+  /**
+   * Where `total` came from: the host's `tokenUsage` session projection
+   * (incremental, cheap) or a full-log event fold (fallback when the
+   * projection registry or the live session is unavailable).
+   */
+  usageSource: external_exports.enum(["projection", "events", "none"]),
+  /**
+   * Context occupancy from the host's `contextPressure` projection: the
+   * estimated prompt size of the NEXT request against the newest known route
+   * capacity. Null when the projection is unreadable or either value is
+   * unknown; absent on older hosts.
+   */
+  pressure: external_exports.object({ tokens: external_exports.number(), contextWindow: external_exports.number() }).nullable().optional(),
   segmentCount: external_exports.number(),
   activeCount: external_exports.number(),
   rolledBackCount: external_exports.number(),

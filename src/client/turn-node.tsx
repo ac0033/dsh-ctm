@@ -2,7 +2,8 @@
 import type { StepGroup, TurnGroup } from './model'
 import type { Shared } from './shared'
 import { renderMarkdown } from './markdown'
-import { roleLabel, sourceKindLabel } from './labels'
+import { roleLabel, sourceKindLabel, usageLine } from './labels'
+import { sumSegmentUsage } from '../usage'
 import { SegmentCard } from './segment-card'
 
 function nodeSuggestion(sh: Shared, node: TurnGroup): string {
@@ -36,11 +37,14 @@ function StepSection({ step, sh }: { step: StepGroup; sh: Shared }) {
   const open = sh.isOpen('steps', step.key)
   const baseLabel = step.sourceKind ? sourceKindLabel(t, segs[0]!) : roleLabel(t, step.label)
   const label = step.num != null ? `${baseLabel} ${step.num}` : (step.label.startsWith('step-') ? `${t('step')} ${step.label.slice(5)}` : baseLabel)
+  // The step's single LLM request, provider-measured (the assistant segment
+  // carries its usage); null until any segment reports usage.
+  const stepUsage = sumSegmentUsage(segs)
   return (
     <div className="ctm-step">
       <div className="ctm-step-head" onClick={() => sh.toggle('steps', step.key)}>
         <span>{(open ? '▾ ' : '▸ ') + label}{assistant.length ? ` · ${assistant.length} ${t('assistant')}` : ''}{tools.length ? ` · ${tools.length} ${t('toolResults')}` : ''}{other.length ? ` · ${other.length}` : ''}</span>
-        <span className="ctm-node-sub">{step.turn != null ? <span className="ctm-turn-label">{`${t('turn')} ${step.turn}`}</span> : null}{' '}{segs.length} {t('seg')}</span>
+        <span className="ctm-node-sub">{stepUsage && <span title={t('stepUsageTip')}>{usageLine(t, stepUsage, false)}{' · '}</span>}{step.turn != null ? <span className="ctm-turn-label">{`${t('turn')} ${step.turn}`}</span> : null}{' '}{segs.length} {t('seg')}</span>
       </div>
       {open && <div>{[...other, ...assistant, ...tools].map(seg => <SegmentCard key={seg.id} seg={seg} sh={sh} />)}</div>}
     </div>
@@ -52,12 +56,14 @@ export function TurnNode({ node, sh }: { node: TurnGroup; sh: Shared }) {
   const open = sh.isOpen('turns', node.key)
   const explainOpen = sh.isOpen('explain', node.key) || sh.explainHover === node.key
   const title = node.kind === 'system' ? t('systemInput') : node.kind === 'user' ? t('userInput') : `${t('turn')} ${node.turn}`
+  // Turn-level total: the summed provider usage of the turn's steps.
+  const turnUsage = node.kind === 'turn' ? sumSegmentUsage(node.segments) : null
   return (
     <div className={`ctm-node ${node.kind === 'system' ? 'system' : ''}`}>
       <div className="ctm-node-head">
         <div className="ctm-node-title-wrap" onClick={() => sh.toggle('turns', node.key)}>
           <div className="ctm-node-title">{(open ? '▾ ' : '▸ ') + title}</div>
-          <div className="ctm-node-sub">{node.segments.length} {t('seg')}</div>
+          <div className="ctm-node-sub">{node.segments.length} {t('seg')}{turnUsage && <span title={t('turnUsageTip')}>{' · ' + usageLine(t, turnUsage, true)}</span>}</div>
         </div>
         <div className="ctm-node-actions">
           <div className="ctm-explain-wrap" onMouseEnter={() => sh.setExplainHover(node.key)} onMouseLeave={() => sh.setExplainHover(null)}>
