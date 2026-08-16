@@ -238,8 +238,14 @@ export function apply(ctx: any): void {
     let source: CtmSegment['source']
     let prot = false
     if (ev.type === 'user/message') {
-      const sk = (d.source as { kind?: string } | undefined)?.kind
-      if (sk === 'plugin' || sk === 'skill-catalog' || sk === 'system' || sk === 'approval-policy' || sk === 'runtime') {
+      const src = d.source as { kind?: string; plugin?: string } | undefined
+      if (src?.kind === 'plugin' && src?.plugin === 'ctm') {
+        // CTM's own placeholder/restoration markers: they ARE user/messages
+        // written by a user action, not system injections — group them with
+        // user input. `protected` keeps them read-only (dispatch guards and
+        // the card's action buttons both honor it).
+        role = 'user'; source = 'user_input'; prot = true
+      } else if (src?.kind === 'plugin' || src?.kind === 'skill-catalog' || src?.kind === 'system' || src?.kind === 'approval-policy' || src?.kind === 'runtime') {
         role = 'system'; source = 'system_inject'; prot = true
       } else { role = 'user'; source = 'user_input' }
     } else if (ev.type === 'assistant/message') { role = 'assistant'; source = 'model_output' }
@@ -710,7 +716,7 @@ export function apply(ctx: any): void {
       case 'delete': {
         const seg = findSeg(cur, request.segmentId)
         if (!seg) return { kind: 'error', code: 'nothing_to_delete' }
-        if (seg.source === 'system_inject') return { kind: 'error', code: 'cannot_delete_system' }
+        if (seg.source === 'system_inject' || seg.protected) return { kind: 'error', code: 'cannot_delete_system' }
         const cuser = currentUserSeg(cur)
         if (cuser && seg.id === cuser.id) return { kind: 'error', code: 'cannot_delete_current_user' }
         if (st.deleted.has(seg.id)) return { kind: 'ok', code: 'deleted', params: { count: 0 } }

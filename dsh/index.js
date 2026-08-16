@@ -15202,8 +15202,12 @@ function apply(ctx) {
     let source;
     let prot = false;
     if (ev.type === "user/message") {
-      const sk = d.source?.kind;
-      if (sk === "plugin" || sk === "skill-catalog" || sk === "system" || sk === "approval-policy" || sk === "runtime") {
+      const src = d.source;
+      if (src?.kind === "plugin" && src?.plugin === "ctm") {
+        role = "user";
+        source = "user_input";
+        prot = true;
+      } else if (src?.kind === "plugin" || src?.kind === "skill-catalog" || src?.kind === "system" || src?.kind === "approval-policy" || src?.kind === "runtime") {
         role = "system";
         source = "system_inject";
         prot = true;
@@ -15669,7 +15673,7 @@ function apply(ctx) {
       case "delete": {
         const seg = findSeg(cur, request.segmentId);
         if (!seg) return { kind: "error", code: "nothing_to_delete" };
-        if (seg.source === "system_inject") return { kind: "error", code: "cannot_delete_system" };
+        if (seg.source === "system_inject" || seg.protected) return { kind: "error", code: "cannot_delete_system" };
         const cuser = currentUserSeg(cur);
         if (cuser && seg.id === cuser.id) return { kind: "error", code: "cannot_delete_current_user" };
         if (st.deleted.has(seg.id)) return { kind: "ok", code: "deleted", params: { count: 0 } };

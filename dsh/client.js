@@ -885,6 +885,7 @@ function ToolCalls({ seg, sh }) {
 function SegmentCard({ seg, sh }) {
   const t = sh.t;
   const isSystem = seg.source === "system_inject";
+  const isReadOnly = isSystem || seg.protected === true;
   const isUserInput = seg.role === "user" && seg.source === "user_input";
   const isEditing = sh.editing?.id === seg.id;
   const eff = seg.effectiveness || "effective";
@@ -906,11 +907,11 @@ function SegmentCard({ seg, sh }) {
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ToolCalls, { seg, sh }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-actions", children: [
-      !isSystem && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
+      !isReadOnly && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
       seg.id === "seg-system" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
-      !isSystem && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle danger", disabled: sh.busy, onClick: () => sh.askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
-      isUserInput && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", title: t("rollbackTip"), disabled: sh.busy, onClick: () => sh.askConfirm("rollback", { turnIndex: seg.turn_index }), children: t("rollback") }),
-      !isSystem && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.askConfirm("override", { segmentId: seg.id, value: seg.effectiveness === "effective" ? "stale" : "effective" }), children: seg.effectiveness === "effective" ? t("markStale") : t("markEffective") })
+      !isReadOnly && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle danger", disabled: sh.busy, onClick: () => sh.askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
+      isUserInput && !seg.protected && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", title: t("rollbackTip"), disabled: sh.busy, onClick: () => sh.askConfirm("rollback", { turnIndex: seg.turn_index }), children: t("rollback") }),
+      !isReadOnly && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.askConfirm("override", { segmentId: seg.id, value: seg.effectiveness === "effective" ? "stale" : "effective" }), children: seg.effectiveness === "effective" ? t("markStale") : t("markEffective") })
     ] })
   ] });
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `ctm-card eff-${eff}`, children: [

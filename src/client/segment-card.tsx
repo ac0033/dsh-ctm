@@ -45,6 +45,9 @@ function ToolCalls({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
 export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
   const t = sh.t
   const isSystem = seg.source === 'system_inject'
+  // CTM's own placeholder markers are user-role but read-only: no replace /
+  // delete / rollback / effectiveness overrides on them.
+  const isReadOnly = isSystem || seg.protected === true
   const isUserInput = seg.role === 'user' && seg.source === 'user_input'
   const isEditing = sh.editing?.id === seg.id
   const eff = seg.effectiveness || 'effective'
@@ -74,11 +77,11 @@ export function SegmentCard({ seg, sh }: { seg: CtmSegment; sh: Shared }) {
       )}
       <ToolCalls seg={seg} sh={sh} />
       <div className="ctm-actions">
-        {!isSystem && seg.role !== 'tool' && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index })}>{t('replace')}</button>}
+        {!isReadOnly && seg.role !== 'tool' && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index })}>{t('replace')}</button>}
         {seg.id === 'seg-system' && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index })}>{t('replace')}</button>}
-        {!isSystem && <button type="button" className="ctm-btn subtle danger" disabled={sh.busy} onClick={() => sh.askConfirm('delete', { segmentId: seg.id })}>{t('delete')}</button>}
-        {isUserInput && <button type="button" className="ctm-btn subtle" title={t('rollbackTip')} disabled={sh.busy} onClick={() => sh.askConfirm('rollback', { turnIndex: seg.turn_index })}>{t('rollback')}</button>}
-        {!isSystem && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.askConfirm('override', { segmentId: seg.id, value: seg.effectiveness === 'effective' ? 'stale' : 'effective' })}>{seg.effectiveness === 'effective' ? t('markStale') : t('markEffective')}</button>}
+        {!isReadOnly && <button type="button" className="ctm-btn subtle danger" disabled={sh.busy} onClick={() => sh.askConfirm('delete', { segmentId: seg.id })}>{t('delete')}</button>}
+        {isUserInput && !seg.protected && <button type="button" className="ctm-btn subtle" title={t('rollbackTip')} disabled={sh.busy} onClick={() => sh.askConfirm('rollback', { turnIndex: seg.turn_index })}>{t('rollback')}</button>}
+        {!isReadOnly && <button type="button" className="ctm-btn subtle" disabled={sh.busy} onClick={() => sh.askConfirm('override', { segmentId: seg.id, value: seg.effectiveness === 'effective' ? 'stale' : 'effective' })}>{seg.effectiveness === 'effective' ? t('markStale') : t('markEffective')}</button>}
       </div>
     </div>
   )

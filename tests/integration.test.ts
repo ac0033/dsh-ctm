@@ -457,6 +457,15 @@ describe('integration: deleting sibling tool results in one batch', () => {
     const after = await stateOf(h, 's1')
     expect(after.applyError).toBeNull()
 
+    // The placeholder is CTM's own marker: it groups with user input (NOT
+    // system-injected), stays read-only, and refuses deletion.
+    const placeholder = findSeg(after, seg => seg.content === '[CTM] A tool context segment was removed by the user.')
+    expect(placeholder.source).toBe('user_input')
+    expect(placeholder.role).toBe('user')
+    expect(placeholder.protected).toBe(true)
+    expect(await noticeOf(h, { op: 'delete', sessionId: 's1', segmentId: placeholder.id }))
+      .toEqual({ kind: 'error', code: 'cannot_delete_system' })
+
     // Undo restores the whole absorbed range (role-demoted), not just r1.
     expect(await noticeOf(h, { op: 'undo', sessionId: 's1' })).toEqual({ kind: 'ok', code: 'undone_queued' })
     await h.flush(s)
