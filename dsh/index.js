@@ -14567,7 +14567,8 @@ var ctmSegmentSchema = external_exports.object({
 });
 var ctmNoticeSchema = external_exports.object({
   kind: external_exports.enum(["ok", "warn", "error"]),
-  text: external_exports.string()
+  code: external_exports.string(),
+  params: external_exports.record(external_exports.string(), external_exports.union([external_exports.string(), external_exports.number()])).optional()
 });
 var ctmSummarySchema = external_exports.object({
   inputTokens: external_exports.number().nullable(),
@@ -14834,6 +14835,9 @@ var CONTENT_CAP = 4e4;
 var MAX_SESSION_STORES = 50;
 var MAX_SNAPSHOTS_PER_SESSION = 20;
 var MAX_TRASH_PER_SESSION = 50;
+var REDUNDANT_SIMILARITY = 0.92;
+var RECENT_TOOL_WINDOW = 6;
+var STRONG_STALE_ASSISTANT_AFTER = 3;
 function storeFor(map2, sessionId) {
   const existing = map2.get(sessionId);
   if (existing) {
@@ -14933,7 +14937,7 @@ function computeEffectiveness(segments, overrides) {
       eff = "effective";
       reason = "model_output";
     } else {
-      if (i >= n - 6) {
+      if (i >= n - RECENT_TOOL_WINDOW) {
         eff = "effective";
         reason = "recent_tool";
       } else {
@@ -14946,13 +14950,13 @@ function computeEffectiveness(segments, overrides) {
           const sim = jaccardSimilarity(a, bigramCache.get(other.content || ""));
           if (sim > maxSim) maxSim = sim;
         }
-        if (maxSim > 0.92) {
+        if (maxSim > REDUNDANT_SIMILARITY) {
           eff = "redundant";
           reason = "similar";
         } else {
           eff = "stale";
           reason = "old_tool";
-          if ((assistantAfter[i] ?? 0) >= 3) strong = true;
+          if ((assistantAfter[i] ?? 0) >= STRONG_STALE_ASSISTANT_AFTER) strong = true;
         }
       }
     }
@@ -15365,14 +15369,14 @@ function apply(ctx) {
         return null;
       case "replace": {
         const seg = findSeg(cur, request.segmentId);
-        if (!seg) return { kind: "error", text: "segment_not_found" };
+        if (!seg) return { kind: "error", code: "segment_not_found" };
         const content = String(request.content ?? "");
         if (seg.id === "seg-system") {
-          if (content.includes("{{")) return { kind: "error", text: "invalid_template" };
+          if (content.includes("{{")) return { kind: "error", code: "invalid_template" };
           st.systemOverride = content;
           st.systemOverridePending = realtimeSessions.has(request.sessionId);
           st.edits.set(seg.id, content);
-          return { kind: "ok", text: "replaced_system" };
+          return { kind: "ok", code: "replaced_system" };
         }
         st.edits.set(seg.id, content);
         let idx = -1;
@@ -15381,50 +15385,50 @@ function apply(ctx) {
           break;
         }
         const later = Math.max(0, cur.length - idx - 1);
-        if (!realtimeSessions.has(request.sessionId)) return { kind: "ok", text: "replaced_" + later };
+        if (!realtimeSessions.has(request.sessionId)) return { kind: "ok", code: "replaced", params: { later } };
         const session = liveSession(request.sessionId);
-        if (session === void 0) return { kind: "warn", text: "session_not_live" };
+        if (session === void 0) return { kind: "warn", code: "session_not_live" };
         const edit = seg.role === "tool" ? { kind: "replace-tool", seq: seg.seq, text: content } : { kind: "replace-user", seq: seg.seq, text: content, source: replacementSource(session, seg) };
         const error51 = enqueue(st, session, "replace", seg.role !== "assistant", edit, [seg.id]);
         if (error51 !== null) {
           st.edits.delete(seg.id);
-          return { kind: "error", text: error51 };
+          return { kind: "error", code: error51 };
         }
-        return { kind: "ok", text: "replaced_queued_" + later };
+        return { kind: "ok", code: "replaced_queued", params: { later } };
       }
       case "delete": {
         const seg = findSeg(cur, request.segmentId);
-        if (!seg) return { kind: "error", text: "nothing_to_delete" };
-        if (seg.source === "system_inject") return { kind: "error", text: "cannot_delete_system" };
+        if (!seg) return { kind: "error", code: "nothing_to_delete" };
+        if (seg.source === "system_inject") return { kind: "error", code: "cannot_delete_system" };
         const cuser = currentUserSeg(cur);
-        if (cuser && seg.id === cuser.id) return { kind: "error", text: "cannot_delete_current_user" };
-        if (st.deleted.has(seg.id)) return { kind: "ok", text: "deleted_0" };
+        if (cuser && seg.id === cuser.id) return { kind: "error", code: "cannot_delete_current_user" };
+        if (st.deleted.has(seg.id)) return { kind: "ok", code: "deleted", params: { count: 0 } };
         const c = cloneSegment(seg);
         c.deleted = true;
         st.trash = st.trash.concat(c).slice(-MAX_TRASH_PER_SESSION);
         st.deleted.add(seg.id);
         if (!realtimeSessions.has(request.sessionId)) {
           st.undoStack = { ids: [seg.id] };
-          return { kind: "ok", text: "deleted_1" };
+          return { kind: "ok", code: "deleted", params: { count: 1 } };
         }
         const session = liveSession(request.sessionId);
         if (session === void 0) {
           st.undoStack = { ids: [seg.id] };
-          return { kind: "warn", text: "session_not_live" };
+          return { kind: "warn", code: "session_not_live" };
         }
         const edit = { kind: "delete", seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` };
         const error51 = enqueue(st, session, "delete", eventBySeq(session, seg.seq)?.type === "user/message", edit, [seg.id]);
         if (error51 !== null) {
           st.deleted.delete(seg.id);
           st.trash = st.trash.filter((t) => t.id !== seg.id);
-          return { kind: "error", text: error51 };
+          return { kind: "error", code: error51 };
         }
         st.undoStack = null;
-        return { kind: "ok", text: "deleted_queued" };
+        return { kind: "ok", code: "deleted_queued" };
       }
       case "rollback": {
         const t = request.turnIndex;
-        if (typeof t !== "number" || t < 0) return { kind: "error", text: "invalid_turn" };
+        if (typeof t !== "number" || t < 0) return { kind: "error", code: "invalid_turn" };
         st.snapshots.push({ id: "snap-" + Date.now() + "-" + Math.floor(Math.random() * 1e4), createdAt: Date.now(), label: "rollback_to_" + t, segments: cur.map(cloneSegment) });
         if (st.snapshots.length > MAX_SNAPSHOTS_PER_SESSION) st.snapshots.shift();
         st.head = st.snapshots[st.snapshots.length - 1].id;
@@ -15441,26 +15445,26 @@ function apply(ctx) {
         }
         if (realtimeSessions.has(request.sessionId) && count > 0 && startSeq >= 0) {
           const session = liveSession(request.sessionId);
-          if (session === void 0) return { kind: "warn", text: "session_not_live" };
+          if (session === void 0) return { kind: "warn", code: "session_not_live" };
           const edit = { kind: "rollback", startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` };
           const error51 = enqueue(st, session, "rollback", false, edit, [...st.rolledBack]);
           if (error51 !== null) {
             st.rolledBack = previous;
-            return { kind: "error", text: error51 };
+            return { kind: "error", code: error51 };
           }
-          return { kind: "ok", text: "rollback_queued_" + count };
+          return { kind: "ok", code: "rollback_queued", params: { count } };
         }
-        return { kind: "ok", text: "rolled_back_" + count };
+        return { kind: "ok", code: "rolled_back", params: { count } };
       }
       case "restore": {
         const snap = st.snapshots.find((s) => s.id === request.snapshotId);
-        if (!snap) return { kind: "error", text: "snapshot_not_found" };
+        if (!snap) return { kind: "error", code: "snapshot_not_found" };
         st.base = snap.segments.map(cloneSegment);
         st.rolledBack.clear();
         st.edits.clear();
         st.overrides.clear();
         st.head = snap.id;
-        return { kind: "ok", text: "restored" };
+        return { kind: "ok", code: "restored" };
       }
       case "reset":
         st.base = null;
@@ -15477,28 +15481,28 @@ function apply(ctx) {
         st.systemOverride = null;
         st.systemOverridePending = false;
         st.lastApplyError = null;
-        return { kind: "ok", text: "reset" };
+        return { kind: "ok", code: "reset" };
       case "undo": {
         const queued = st.queue[st.queue.length - 1];
         if (queued) {
           st.queue.pop();
           releaseViewMutations(st, queued);
-          return { kind: "ok", text: "undone_queued" };
+          return { kind: "ok", code: "undone_queued" };
         }
         if (st.undoStack && st.undoStack.ids.length) {
           for (const id of st.undoStack.ids) st.deleted.delete(id);
           st.trash = st.trash.filter((t) => !st.undoStack.ids.includes(t.id));
           st.undoStack = null;
-          return { kind: "ok", text: "undone" };
+          return { kind: "ok", code: "undone" };
         }
         const applied = st.appliedEdits[st.appliedEdits.length - 1];
         if (applied) {
           const session = liveSession(request.sessionId);
-          if (session === void 0) return { kind: "warn", text: "undo_unavailable" };
+          if (session === void 0) return { kind: "warn", code: "undo_unavailable" };
           try {
             planUndo(session, applied);
           } catch (e) {
-            if (e instanceof EditPlanError) return { kind: "warn", text: "undo_unavailable" };
+            if (e instanceof EditPlanError) return { kind: "warn", code: "undo_unavailable" };
             throw e;
           }
           st.appliedEdits.pop();
@@ -15514,32 +15518,32 @@ function apply(ctx) {
           const replacementId = "seg-" + applied.replacementSeq;
           st.queue.push({ id: newGroupId(), kind: "undo", undoable: false, edits: [{ kind: "undo", applied }], segmentIds: [replacementId] });
           if (originalText) st.edits.set(replacementId, originalText);
-          return { kind: "ok", text: "undone_queued" };
+          return { kind: "ok", code: "undone_queued" };
         }
-        return { kind: "warn", text: "nothing_to_undo" };
+        return { kind: "warn", code: "nothing_to_undo" };
       }
       case "override": {
         const seg = findSeg(cur, request.segmentId);
-        if (!seg) return { kind: "error", text: "segment_not_found" };
+        if (!seg) return { kind: "error", code: "segment_not_found" };
         if (request.value == null) {
           st.overrides.delete(seg.id);
-          return { kind: "ok", text: "override_cleared" };
+          return { kind: "ok", code: "override_cleared" };
         }
-        if (!["effective", "redundant", "stale", "injected"].includes(request.value)) return { kind: "error", text: "invalid_effectiveness" };
+        if (!["effective", "redundant", "stale", "injected"].includes(request.value)) return { kind: "error", code: "invalid_effectiveness" };
         st.overrides.set(seg.id, request.value);
-        return { kind: "ok", text: "override_" + request.value };
+        return { kind: "ok", code: "override_set", params: { value: request.value } };
       }
       case "setRealtime":
         if (request.enabled) {
           realtimeSessions.add(request.sessionId);
           if (st.systemOverride !== null) st.systemOverridePending = true;
           const queuedCount = enqueueViewMutations(request.sessionId, st, cur);
-          return queuedCount > 0 ? { kind: "ok", text: "realtime_on_queued_" + queuedCount } : { kind: "ok", text: "realtime_on" };
+          return queuedCount > 0 ? { kind: "ok", code: "realtime_on_queued", params: { count: queuedCount } } : { kind: "ok", code: "realtime_on" };
         }
         realtimeSessions.delete(request.sessionId);
-        return { kind: "ok", text: "realtime_off" };
+        return { kind: "ok", code: "realtime_off" };
       default:
-        return { kind: "error", text: "unknown_op" };
+        return { kind: "error", code: "unknown_op" };
     }
   }
   ctx.on("agent/pre-step", (payload, next) => {

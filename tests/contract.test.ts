@@ -94,3 +94,27 @@ describe('ctmStateSchema interceptError compatibility', () => {
     expect(parsed.interceptError).toBeNull()
   })
 })
+
+describe('ctmNoticeSchema structured notices', () => {
+  it('a notice with params survives a JSON round-trip', () => {
+    const notice = { kind: 'ok', code: 'replaced', params: { later: 3 } } as const
+    const parsed = ctmStateSchema.parse(JSON.parse(JSON.stringify(makeState({ notice }))))
+    expect(parsed.notice).toEqual(notice)
+  })
+
+  it('params may mix string and number values', () => {
+    const notice = { kind: 'ok', code: 'override_set', params: { value: 'stale', count: 2 } } as const
+    const parsed = ctmStateSchema.parse(makeState({ notice }))
+    expect(parsed.notice).toEqual(notice)
+  })
+
+  it('params is optional', () => {
+    const parsed = ctmStateSchema.parse(makeState({ notice: { kind: 'warn', code: 'session_not_live' } }))
+    expect(parsed.notice).toEqual({ kind: 'warn', code: 'session_not_live' })
+  })
+
+  it('rejects an unknown kind and non-scalar params', () => {
+    expect(() => ctmStateSchema.parse(makeState({ notice: { kind: 'info', code: 'x' } as never }))).toThrow()
+    expect(() => ctmStateSchema.parse(makeState({ notice: { kind: 'ok', code: 'x', params: { nested: {} } } as never }))).toThrow()
+  })
+})

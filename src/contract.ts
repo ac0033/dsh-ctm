@@ -61,9 +61,16 @@ export const ctmSegmentSchema = z.object({
 })
 export type CtmSegment = z.infer<typeof ctmSegmentSchema>
 
+/**
+ * Structured notice: `code` is a stable machine key the client maps to a
+ * localized template, `params` fills the template's `{placeholder}` slots.
+ * Replaces the old underscore-encoded `text` ("replaced_3"), which forced the
+ * client to reverse-parse host strings with regexes.
+ */
 export const ctmNoticeSchema = z.object({
   kind: z.enum(['ok', 'warn', 'error']),
-  text: z.string(),
+  code: z.string(),
+  params: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
 })
 export type CtmNotice = z.infer<typeof ctmNoticeSchema>
 

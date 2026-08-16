@@ -30,85 +30,90 @@ module.exports = __toCommonJS(index_exports);
 
 // src/client/styles.ts
 var CSS = `
-.ctm-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 2px;color:var(--dsw-alias-label-primary);}
-.ctm-sticky{position:sticky;top:0;z-index:20;background:var(--dsw-alias-bg-layer-1);backdrop-filter:blur(6px);border-radius:10px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1);box-shadow:0 1px 6px rgba(0,0,0,.15);}
-.ctm-minbar{position:sticky;bottom:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);backdrop-filter:blur(6px);box-shadow:0 -1px 6px rgba(0,0,0,.15);}
-.ctm-editor{position:sticky;bottom:0;z-index:30;margin-top:10px;padding:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-1);box-shadow:0 -2px 12px rgba(0,0,0,.2);}
-.ctm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
-.ctm-modal{background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;padding:16px;max-width:440px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.4);color:var(--dsw-alias-label-primary);}
+.ctm-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 2px;color:var(--dsw-alias-label-primary);font-size:13px;}
+.ctm-sticky{position:sticky;top:0;z-index:20;background:var(--dsw-alias-bg-layer-1);border-radius:10px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1);box-shadow:0 1px 6px var(--dsw-alias-bg-mask-2);}
+.ctm-minbar{position:sticky;bottom:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);box-shadow:0 -1px 6px var(--dsw-alias-bg-mask-2);}
+.ctm-editor{position:sticky;bottom:0;z-index:30;margin-top:10px;padding:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-1);box-shadow:0 -2px 12px var(--dsw-alias-bg-mask-1);}
+.ctm-modal-overlay{position:fixed;inset:0;background:var(--dsw-alias-bg-mask-3);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.ctm-modal{background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;padding:16px;max-width:440px;width:100%;box-shadow:0 8px 32px var(--dsw-alias-bg-mask-3);color:var(--dsw-alias-label-primary);}
 .ctm-modal .ctm-node-title{margin-bottom:10px;}
-.ctm-modal-row{font-size:12.5px;margin:6px 0;line-height:1.5;}
+.ctm-modal-row{font-size:13px;margin:6px 0;line-height:1.5;}
 .ctm-modal-row b{color:var(--dsw-alias-label-secondary);margin-right:4px;}
-.ctm-summary{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-.ctm-kpi{display:flex;flex-direction:column;min-width:90px;}
+.ctm-summary{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.ctm-kpis{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.ctm-kpi{display:flex;flex-direction:column;min-width:84px;}
 .ctm-kpi .k{font-size:11px;color:var(--dsw-alias-label-secondary);}
 .ctm-kpi .v{font-size:15px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .ctm-kpi .v small{font-weight:400;font-size:11px;color:var(--dsw-alias-label-secondary);}
-.ctm-btn{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;}
+.ctm-toolbar-spacer{flex:1 1 auto;}
+.ctm-toolbar-group{display:flex;gap:2px;align-items:center;flex-wrap:wrap;}
+.ctm-toolbar-sep{width:1px;align-self:stretch;background:var(--dsw-alias-border-l2);margin:2px 2px;}
+.ctm-btn{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;line-height:1.4;}
 .ctm-btn:hover{filter:brightness(1.08);}
-.ctm-btn.primary{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);}
+.ctm-btn.primary{background:var(--dsw-alias-button-primary-fill);border-color:transparent;color:var(--dsw-alias-label-primary-foreground);font-weight:600;}
+.ctm-btn.primary:hover{background:var(--dsw-alias-button-primary-hover);filter:none;}
+.ctm-btn.realtime-on{background:var(--dsw-alias-state-success-tertiary);border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);font-weight:600;}
 .ctm-btn.danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
-.ctm-btn.realtime-on{border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);background:rgba(46,204,113,.12);}
+.ctm-btn.danger:hover{background:var(--dsw-alias-interactive-bg-hover-danger);filter:none;}
+.ctm-btn.subtle{border-color:transparent;background:transparent;color:var(--dsw-alias-label-secondary);padding:4px 8px;}
+.ctm-btn.subtle:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);filter:none;}
+.ctm-btn.subtle.danger{border-color:transparent;color:var(--dsw-alias-state-error-primary);}
+.ctm-btn.subtle.danger:hover{background:var(--dsw-alias-interactive-bg-hover-danger);}
 .ctm-btn:disabled{opacity:.5;cursor:default;}
 .ctm-flow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;}
-.ctm-node{flex:1 1 280px;min-width:240px;border:2px solid var(--dsw-alias-border-l2);border-radius:12px;padding:8px 10px;background:var(--dsw-alias-bg-layer-1);position:relative;}
-.ctm-node.system{border-style:dashed;border-color:var(--dsw-alias-border-l2);}
-.ctm-node.green{border-color:var(--dsw-alias-state-success-primary);}
-.ctm-node.blue{border-color:var(--dsw-alias-brand-primary);}
-.ctm-node.yellow{border-color:var(--dsw-alias-state-warn-primary);}
-.ctm-node.red{border-color:var(--dsw-alias-state-error-primary);}
+.ctm-node{flex:1 1 320px;min-width:260px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;padding:10px 12px;background:var(--dsw-alias-bg-layer-1);position:relative;}
+.ctm-node.system{border-style:dashed;}
 .ctm-node-head{display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .ctm-node-title-wrap{flex:1 1 auto;cursor:pointer;min-width:0;}
-.ctm-node-title{font-weight:700;font-size:13px;}
-.ctm-node-sub{font-size:11px;color:var(--dsw-alias-label-secondary);}
+.ctm-node-title{font-weight:700;font-size:14px;}
+.ctm-node-sub{font-size:12px;color:var(--dsw-alias-label-secondary);}
 .ctm-node-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto;}
 .ctm-turn-label{font-size:11px;color:var(--dsw-alias-label-secondary);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:0 6px;}
 .ctm-explain-wrap{position:relative;display:inline-block;}
-.ctm-explain{position:absolute;top:100%;right:0;margin-top:4px;width:340px;max-width:80vw;max-height:320px;overflow:auto;z-index:40;padding:10px 12px;border:1px solid var(--dsw-alias-brand-primary);border-radius:10px;background:var(--dsw-alias-bg-overlay);color:var(--dsw-alias-label-primary);box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:12px;}
+.ctm-explain{position:absolute;top:100%;right:0;margin-top:4px;width:340px;max-width:80vw;max-height:320px;overflow:auto;z-index:40;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-overlay);color:var(--dsw-alias-label-primary);box-shadow:0 6px 24px var(--dsw-alias-bg-mask-1);font-size:12.5px;}
 .ctm-step{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:6px 8px;margin-top:8px;background:var(--dsw-alias-bg-layer-2);}
-.ctm-step-head{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;font-size:12px;}
-.ctm-card{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:8px;margin-top:8px;background:var(--dsw-alias-bg-layer-2);}
-.ctm-card.system{border-style:dashed;border-color:var(--dsw-alias-border-l2);}
-.ctm-card.green{border-color:var(--dsw-alias-state-success-primary);}
-.ctm-card.blue{border-color:var(--dsw-alias-brand-primary);}
-.ctm-card.yellow{border-color:var(--dsw-alias-state-warn-primary);}
-.ctm-card.red{border-color:var(--dsw-alias-state-error-primary);}
-.ctm-dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:11.5px;margin-bottom:6px;}
-.ctm-dl dt{color:var(--dsw-alias-label-secondary);font-weight:600;}
-.ctm-dl dd{margin:0;word-break:break-all;color:var(--dsw-alias-label-primary);}
-.ctm-badge{display:inline-block;border-radius:6px;padding:1px 6px;font-size:10px;border:1px solid;cursor:help;}
-.ctm-badge.hit{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary);}
-.ctm-badge.miss{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
-.ctm-badge.partial{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
-.ctm-badge.unknown{color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-label-secondary);}
+.ctm-step-head{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;}
+.ctm-card{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px 10px;margin-top:8px;background:var(--dsw-alias-bg-layer-2);}
+.ctm-card.eff-effective{border-left-color:var(--dsw-alias-state-success-primary);}
+.ctm-card.eff-redundant{border-left-color:var(--dsw-alias-state-warn-primary);}
+.ctm-card.eff-stale{border-left-color:var(--dsw-alias-state-error-primary);}
+.ctm-card.eff-injected{border-left-color:var(--dsw-alias-border-l3);border-left-style:dashed;}
+.ctm-meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--dsw-alias-label-secondary);margin-bottom:6px;}
+.ctm-badge{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;line-height:1.5;border:1px solid;cursor:help;}
+.ctm-badge.cache{color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-border-l2);}
+.ctm-badge.pending{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);}
 .ctm-badge.eff-effective{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary);}
-.ctm-badge.eff-redundant{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
-.ctm-badge.eff-stale{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
+.ctm-badge.eff-redundant{color:var(--dsw-alias-state-warn-label);border-color:var(--dsw-alias-state-warn-primary);}
+.ctm-badge.eff-stale{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);}
 .ctm-badge.eff-injected{color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-label-secondary);border-style:dashed;}
-.ctm-content{font-size:12.5px;line-height:1.55;color:var(--dsw-alias-label-primary);}
+.ctm-content{font-size:13px;line-height:1.6;color:var(--dsw-alias-label-primary);}
 .ctm-content.trunc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 .ctm-md-p{margin:2px 0;}
 .ctm-md-h{margin:6px 0 2px;font-weight:700;}
-.ctm-md-code{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:6px 8px;font-family:monospace;font-size:11px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;}
-.ctm-code{font-family:monospace;font-size:11.5px;background:var(--dsw-alias-bg-layer-2);padding:0 3px;border-radius:4px;}
+.ctm-md-code{background:var(--dsw-alias-markdown-code-block);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:6px 8px;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;}
+.ctm-code{font-family:monospace;font-size:12px;background:var(--dsw-alias-markdown-inline-code);padding:0 3px;border-radius:4px;}
 .ctm-md-list{margin:2px 0 2px 18px;padding:0;}
-.ctm-thinking{font-size:11.5px;color:var(--dsw-alias-label-secondary);border-left:2px solid var(--dsw-alias-brand-primary);padding-left:8px;margin-top:4px;max-height:160px;overflow:auto;white-space:pre-wrap;word-break:break-word;}
+.ctm-thinking{font-size:12px;color:var(--dsw-alias-label-secondary);border-left:2px solid var(--dsw-alias-border-l3);padding-left:8px;margin-top:4px;max-height:160px;overflow:auto;white-space:pre-wrap;word-break:break-word;}
 .ctm-tools{margin-top:6px;}
-.ctm-toolitem{font-family:monospace;font-size:11px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:4px 6px;margin-top:4px;word-break:break-all;max-height:140px;overflow:auto;white-space:pre-wrap;}
-.ctm-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;}
-.ctm-hint{font-size:11px;color:var(--dsw-alias-label-secondary);}
-.ctm-notice{border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px;}
-.ctm-notice.ok{border:1px solid var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);}
-.ctm-notice.warn{border:1px solid var(--dsw-alias-state-warn-primary);color:var(--dsw-alias-state-warn-primary);}
-.ctm-notice.error{border:1px solid var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
-.ctm-textarea{width:100%;box-sizing:border-box;min-height:80px;font-family:inherit;font-size:12.5px;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:6px 8px;}
-.ctm-check{display:flex;align-items:center;gap:5px;font-size:12px;margin:4px 0;color:var(--dsw-alias-label-primary);}
+.ctm-toolitem{font-family:monospace;font-size:12px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:4px 6px;margin-top:4px;word-break:break-all;max-height:140px;overflow:auto;white-space:pre-wrap;}
+.ctm-actions{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px;align-items:center;}
+.ctm-hint{font-size:12px;color:var(--dsw-alias-label-secondary);}
+.ctm-notice{border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:8px;border:1px solid;}
+.ctm-notice.ok{border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);}
+.ctm-notice.warn{border-color:var(--dsw-alias-state-warn-primary);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);}
+.ctm-notice.error{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
+.ctm-textarea{width:100%;box-sizing:border-box;min-height:80px;font-family:inherit;font-size:13px;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:6px 8px;}
 .ctm-empty{padding:20px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:13px;}
 .ctm-legend-wrap{position:relative;display:inline-block;}
-.ctm-legend-pop{position:absolute;right:0;top:100%;margin-top:6px;width:400px;max-width:90vw;background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:12px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.3);color:var(--dsw-alias-label-primary);}
+.ctm-legend-pop{position:absolute;right:0;top:100%;margin-top:6px;width:400px;max-width:90vw;background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:12px;z-index:50;box-shadow:0 6px 24px var(--dsw-alias-bg-mask-1);color:var(--dsw-alias-label-primary);}
 .ctm-legend-pop h4{margin:0 0 6px;font-size:13px;}
-.ctm-legend-row{display:flex;gap:8px;font-size:11.5px;margin:5px 0;align-items:baseline;}
-.ctm-dot{flex:0 0 12px;width:12px;height:12px;border-radius:3px;margin-right:2px;align-self:center;}
+.ctm-legend-row{display:flex;gap:8px;font-size:12px;margin:5px 0;align-items:baseline;}
+.ctm-dot{flex:0 0 12px;width:12px;height:12px;border-radius:3px;align-self:center;}
+.ctm-dot.success{background:var(--dsw-alias-state-success-primary);}
+.ctm-dot.warn{background:var(--dsw-alias-state-warn-primary);}
+.ctm-dot.error{background:var(--dsw-alias-state-error-primary);}
+.ctm-dot.business{background:var(--dsw-alias-state-business-primary);}
+.ctm-dot.neutral{background:transparent;border:1px dashed var(--dsw-alias-border-l2);}
 .ctm-pager{display:flex;gap:8px;align-items:center;justify-content:center;margin:8px 0;}
 .ctm-section-title{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary);margin:6px 0;}
 `;
@@ -226,6 +231,13 @@ var zh = {
   overrideCleared: "\u5DF2\u53D6\u6D88\u624B\u52A8\u8986\u76D6\u3002",
   realtimeOnNotice: "\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A\u7F16\u8F91\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u751F\u6548\u3002",
   realtimeOffNotice: "\u771F\u5B9E\u751F\u6548\u5DF2\u5173\u95ED\u3002",
+  noticeReplaced: "\u5DF2\u66FF\u6362\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E {later} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09\u3002",
+  noticeReplacedQueued: "\u5DF2\u66FF\u6362\u5E76\u5165\u961F\uFF1A\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E {later} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09\u3002",
+  noticeRolledBack: "\u5DF2\u56DE\u9000\uFF1B\u5176\u540E {count} \u6761\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u672A\u5220\u9664\uFF09\u3002",
+  noticeRollbackQueued: "\u5DF2\u56DE\u9000\u5E76\u5165\u961F\uFF1A\u5176\u540E {count} \u6761\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\uFF08\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF09\u3002",
+  noticeDeleted: "\u5DF2\u5220\u9664 {count} \u6761\u7247\u6BB5\uFF08\u8F6F\u5220\u9664\uFF0C\u53EF\u64A4\u9500\uFF09\u3002",
+  noticeRealtimeQueued: "\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A{count} \u9879\u89C6\u56FE\u7F16\u8F91\u5DF2\u5165\u961F\uFF0C\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548\u3002",
+  noticeOverride: "\u5DF2\u624B\u52A8\u6807\u8BB0\u4E3A {value}\u3002",
   legTitle: "\u56FE\u4F8B",
   legCacheHit: "\u6709\u6548\u4E14\u547D\u4E2D\u7F13\u5B58\uFF08\u9884\u6D4B\uFF09",
   legCacheMiss: "\u6709\u6548\u4F46\u672A\u547D\u4E2D\u7F13\u5B58\uFF08\u9884\u6D4B\uFF09",
@@ -359,6 +371,13 @@ var en = {
   overrideCleared: "Manual override cleared.",
   realtimeOnNotice: "Apply-for-real enabled: edits are written to the session log and take effect at the model's next step.",
   realtimeOffNotice: "Realtime apply disabled.",
+  noticeReplaced: "Replaced; this segment and the next {later} messages lost their cache (prefix break).",
+  noticeReplacedQueued: "Replaced and queued: logged at the model's next step; this segment and the next {later} messages lose their cache (prefix break).",
+  noticeRolledBack: "Rolled back; {count} later segments marked stale (kept).",
+  noticeRollbackQueued: "Rolled back and queued: {count} later segments will be replaced by one placeholder marker at the next step (logged).",
+  noticeDeleted: "Deleted {count} segments (soft delete, undoable).",
+  noticeRealtimeQueued: "Apply-for-real ON: {count} view edit(s) queued; they are logged and take effect at the model's next step.",
+  noticeOverride: "Manually marked as {value}.",
   legTitle: "Legend",
   legCacheHit: "valid and cache hit (prediction)",
   legCacheMiss: "valid but cache miss (prediction)",
@@ -383,96 +402,9 @@ var en = {
 };
 
 // src/client/view.tsx
-var import_react = require("react");
+var import_react2 = require("react");
 
-// src/client/text.ts
-function unescapeText(s) {
-  if (!s) return s;
-  const BS = String.fromCharCode(92);
-  const LF = String.fromCharCode(10);
-  const TAB = String.fromCharCode(9);
-  const NUL = String.fromCharCode(0);
-  let out = s.split(BS + BS).join(NUL);
-  out = out.split(BS + "n").join(LF);
-  out = out.split(BS + "t").join(TAB);
-  out = out.split(BS + "r").join("");
-  out = out.split(BS + '"').join('"');
-  out = out.split(NUL).join(BS);
-  return out;
-}
-
-// src/client/view.tsx
-var import_jsx_runtime = require("react/jsx-runtime");
-var PAGE_SIZE = 2;
-var stateCache = /* @__PURE__ */ new Map();
-function renderInline(text) {
-  const parts = [];
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
-  let last = 0;
-  let index = 0;
-  for (const match of text.matchAll(regex)) {
-    const at = match.index ?? 0;
-    if (at > last) parts.push(text.slice(last, at));
-    const tok = match[0] ?? "";
-    if (tok.startsWith("**")) parts.push(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: tok.slice(2, -2) }, `b${index++}`));
-    else parts.push(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", { className: "ctm-code", children: tok.slice(1, -1) }, `c${index++}`));
-    last = at + tok.length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts;
-}
-function renderMarkdown(text) {
-  const lines = text.split("\n");
-  const out = [];
-  let codeBuf = [];
-  let inCode = false;
-  let key = 0;
-  const flush = () => {
-    if (codeBuf.length > 0) {
-      out.push(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", { className: "ctm-md-code", children: codeBuf.join("\n") }, `code${key++}`));
-      codeBuf = [];
-    }
-  };
-  for (const line of lines) {
-    if (line.trim().startsWith("```")) {
-      if (inCode) {
-        flush();
-        inCode = false;
-      } else {
-        inCode = true;
-      }
-      ;
-      continue;
-    }
-    if (inCode) {
-      codeBuf.push(line);
-      continue;
-    }
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      flush();
-      continue;
-    }
-    const h = trimmed.match(/^(#{1,4})\s+(.*)$/);
-    if (h) {
-      flush();
-      out.push(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-md-h", children: renderInline(h[2]) }, `h${key++}`));
-      continue;
-    }
-    const ul = trimmed.match(/^[-*]\s+(.*)$/);
-    const ol = trimmed.match(/^\d+[.)]\s+(.*)$/);
-    if (ul || ol) {
-      out.push(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-md-list", children: [
-        "\u2022 ",
-        renderInline((ul ?? ol)[1])
-      ] }, `li${key++}`));
-      continue;
-    }
-    out.push(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-md-p", children: renderInline(line) }, `p${key++}`));
-  }
-  flush();
-  return out.length ? out : [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-md-p", children: text }, "fallback")];
-}
+// src/client/model.ts
 function recoverTurns(segments) {
   let maxTurn = 0;
   for (const s of segments) if (s.turn != null && s.turn > maxTurn) maxTurn = s.turn;
@@ -503,47 +435,547 @@ function recoverTurns(segments) {
   }
   return out;
 }
+function groupNodes(segments) {
+  const sys = [];
+  const usr = [];
+  const byTurn = /* @__PURE__ */ new Map();
+  const turnNums = [];
+  for (const s of segments) {
+    if (s.source === "system_inject") sys.push(s);
+    else if (s.role === "user" && s.source === "user_input") usr.push(s);
+    else if (s.turn != null) {
+      const arr = byTurn.get(s.turn) ?? [];
+      arr.push(s);
+      byTurn.set(s.turn, arr);
+      turnNums.push(s.turn);
+    } else usr.push(s);
+  }
+  const firstTurn = turnNums.length ? Math.min(...turnNums) : 1;
+  const nodes = [];
+  if (usr.length) nodes.push({ key: "input", kind: "user", turn: null, belongsToTurn: firstTurn, segments: usr, steps: [] });
+  if (sys.length) nodes.push({ key: "sys", kind: "system", turn: null, belongsToTurn: firstTurn, segments: sys, steps: [] });
+  for (const tn of [...byTurn.keys()].sort((a, b) => a - b)) nodes.push({ key: `turn-${tn}`, kind: "turn", turn: tn, segments: byTurn.get(tn), steps: [] });
+  for (const node of nodes) {
+    if (node.kind !== "turn") {
+      node.steps = node.segments.map((s, idx) => ({ key: `${node.key}::seg-${s.id}`, label: s.role, num: idx + 1, turn: s.turn ?? void 0, sourceKind: s.sourceKind, segments: [s] }));
+    } else {
+      const byStep = /* @__PURE__ */ new Map();
+      for (const s of node.segments) {
+        const k = s.step == null ? "step-null" : `step-${s.step}`;
+        const arr = byStep.get(k) ?? [];
+        arr.push(s);
+        byStep.set(k, arr);
+      }
+      const keys = [...byStep.keys()].sort((a, b) => {
+        const na = a === "step-null" ? -1 : parseInt(a.slice(5), 10);
+        const nb = b === "step-null" ? -1 : parseInt(b.slice(5), 10);
+        return na - nb;
+      });
+      node.steps = keys.map((k) => ({ key: `${node.key}::${k}`, label: k, segments: byStep.get(k) }));
+    }
+  }
+  return nodes;
+}
+
+// src/client/labels.ts
+var roleLabel = (t, role) => role === "system" ? t("roleSystem") : role === "user" ? t("roleUser") : role === "assistant" ? t("roleAssistant") : role === "tool" ? t("roleTool") : role;
+var cacheLabel = (t, cs) => cs === "hit" ? t("cacheHitLabel") : cs === "miss" ? t("cacheMissLabel") : cs === "partial" ? t("cachePartial") : t("cacheUnknown");
+var effLabel = (t, eff) => eff === "effective" ? t("effEffective") : eff === "redundant" ? t("effRedundant") : eff === "stale" ? t("effStale") : eff === "injected" ? t("effInjected") : eff;
+var cacheTip = (t, cs) => cs === "hit" ? t("tipCacheHit") : cs === "miss" ? t("tipCacheMiss") : cs === "partial" ? t("tipCachePartial") : "";
+var effTip = (t, eff) => eff === "effective" ? t("tipEffective") : eff === "redundant" ? t("tipRedundant") : eff === "stale" ? t("tipStale") : eff === "injected" ? t("tipInjected") : "";
+var fmtTime = (tm) => tm ? new Date(tm).toLocaleTimeString() : "";
+var fmtNum = (n) => n == null ? "\u2014" : String(n);
+var sourceKindLabel = (t, seg) => {
+  if (seg.source === "system_inject") {
+    if (seg.sourceKind === "system") return t("initialSystemPrompt");
+    if (seg.sourceKind === "skill-catalog") return t("skillCatalog");
+    if (seg.sourceKind === "approval-policy") return t("approvalPolicy");
+    return t("systemPromptSection");
+  }
+  return roleLabel(t, seg.role);
+};
+
+// src/client/notices.ts
+var PARAM_TEMPLATES = {
+  replaced: "noticeReplaced",
+  replaced_queued: "noticeReplacedQueued",
+  rolled_back: "noticeRolledBack",
+  rollback_queued: "noticeRollbackQueued",
+  deleted: "noticeDeleted",
+  realtime_on_queued: "noticeRealtimeQueued"
+};
+var STATIC_KEYS = {
+  segment_not_found: "segNotFound",
+  cannot_replace_system: "cannotReplaceSystem",
+  tool_readonly: "toolReadonly",
+  invalid_turn: "invalidTurn",
+  snapshot_not_found: "snapshotNotFound",
+  restored: "restored",
+  reset: "resetDone",
+  cannot_delete_system: "cannotDeleteSystem",
+  cannot_delete_current_user: "cannotDeleteUser",
+  nothing_to_delete: "nothingDelete",
+  nothing_to_undo: "nothingUndo",
+  undone: "undoneNotice",
+  override_cleared: "overrideCleared",
+  invalid_effectiveness: "invalidEff",
+  realtime_on: "realtimeOnNotice",
+  realtime_off: "realtimeOffNotice",
+  deleted_queued: "deletedQueued",
+  replaced_system: "replacedSystem",
+  session_not_live: "sessionNotLive",
+  segment_gone: "segmentGone",
+  unbalanced_edit: "unbalancedEdit",
+  tool_result_changed: "toolResultChanged",
+  invalid_template: "invalidTemplate",
+  undone_queued: "undoneQueued",
+  undo_unavailable: "undoUnavailable"
+};
+function renderTemplate(tpl, params) {
+  return tpl.replace(/\{(\w+)\}/g, (slot, name) => params[name] !== void 0 ? String(params[name]) : slot);
+}
+function noticeText(notice, t) {
+  const code = notice.code;
+  if (code === "override_set") {
+    const value = notice.params?.value;
+    return renderTemplate(t("noticeOverride"), { value: value === void 0 ? "" : effLabel(t, String(value)) });
+  }
+  const tplKey = PARAM_TEMPLATES[code];
+  if (tplKey !== void 0) return renderTemplate(t(tplKey), notice.params ?? {});
+  const staticKey = STATIC_KEYS[code];
+  if (staticKey !== void 0) return t(staticKey);
+  return code;
+}
+
+// src/client/shared.ts
+var import_react = require("react");
+function useExpansion() {
+  const [maps, setMaps] = (0, import_react.useState)({});
+  const isOpen = (0, import_react.useCallback)((ns, key) => !!maps[ns]?.[key], [maps]);
+  const toggle = (0, import_react.useCallback)((ns, key) => {
+    setMaps((p) => ({ ...p, [ns]: { ...p[ns], [key]: !p[ns]?.[key] } }));
+  }, []);
+  return { isOpen, toggle };
+}
+
+// src/client/legend.tsx
+var import_jsx_runtime = require("react/jsx-runtime");
+function Legend({ sh }) {
+  const t = sh.t;
+  const items = [
+    { dot: "success", term: t("effEffective"), txt: t("legEffective") },
+    { dot: "warn", term: t("effRedundant"), txt: t("legRedundant") },
+    { dot: "error", term: t("effStale"), txt: t("legStale") },
+    { dot: "neutral", term: t("effInjected"), txt: t("legInjected") },
+    { dot: "neutral", term: t("cacheHitLabel"), txt: t("legCacheHit") },
+    { dot: "neutral", term: t("cacheMissLabel"), txt: t("legCacheMiss") },
+    { dot: "business", term: t("replace"), txt: t("legReplace") },
+    { dot: "error", term: t("delete"), txt: t("legDelete") },
+    { dot: "warn", term: `${t("markStale")} / ${t("markEffective")}`, txt: t("legMark") }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-wrap", onMouseEnter: () => sh.setLegendHover(true), onMouseLeave: () => sh.setLegendHover(false), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn subtle", children: t("legend") }),
+    sh.legendHover && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-pop", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", { children: t("legTitle") }),
+      items.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `ctm-dot ${it.dot}` }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: it.term }),
+          " \u2014 ",
+          it.txt
+        ] })
+      ] }, i))
+    ] })
+  ] });
+}
+
+// src/client/toolbar.tsx
+var import_jsx_runtime2 = require("react/jsx-runtime");
+function Toolbar({ sh, h }) {
+  const t = sh.t;
+  const sum = sh.state.summary;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ctm-sticky", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-summary", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpis", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("totalTokens") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.inputTokens) })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("cacheHit") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.cachedTokens) })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("outputTokens") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.outputTokens) })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("reasoningTokens") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: fmtNum(sum?.reasoningTokens) })
+      ] }),
+      sum?.model && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-kpi", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "k", children: t("model") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "v", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("small", { children: sum.model.provider + " \xB7 " + sum.model.model }) })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-toolbar-spacer" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: `ctm-btn ${sh.state.realtime ? "realtime-on" : "primary"}`, title: t("realtimeTip"), onClick: h.onToggleRealtime, children: `${t("realtime")}: ${sh.state.realtime ? t("realtimeOn") : t("realtimeOff")}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn", title: t("refreshTip"), onClick: h.onRefresh, children: t("refresh") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "ctm-toolbar-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", title: t("snapshotsTip"), onClick: h.onToggleSnapshots, children: `${t("snapshots")}(${sh.state.snapshots.length})` }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", title: t("trashTip"), onClick: h.onToggleTrash, children: `${t("trash")}(${sh.state.trash.length})` }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Legend, { sh }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: h.onMinimize, children: "\u25BE " + t("minimize") }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: h.onToggleLang, children: t("lang") })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-toolbar-sep" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn danger", title: t("resetTip"), onClick: h.onReset, children: t("reset") })
+  ] }) });
+}
+function MinBar({ sh, onExpand, onToggleLang }) {
+  const t = sh.t;
+  const sum = sh.state.summary;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-minbar", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn", onClick: onExpand, children: "\u25B4 " + t("expandView") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-hint", children: `Context \xB7 ${t("totalTokens")} ${fmtNum(sum?.inputTokens)} \xB7 ${t("cacheHit")} ${fmtNum(sum?.cachedTokens)}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Legend, { sh }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: onToggleLang, children: t("lang") })
+  ] }) });
+}
+function Pager({ sh, page, totalPages, onPage }) {
+  const t = sh.t;
+  if (totalPages <= 1) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ctm-pager", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn", disabled: page === 0, onClick: () => onPage((p) => Math.max(0, p - 1)), children: t("prevPage") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "ctm-hint", children: `${t("page")} ${page + 1} ${t("of")} ${totalPages}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "ctm-btn", disabled: page >= totalPages - 1, onClick: () => onPage((p) => Math.min(totalPages - 1, p + 1)), children: t("nextPage") })
+  ] });
+}
+
+// src/client/markdown.tsx
+var import_jsx_runtime3 = require("react/jsx-runtime");
+function renderInline(text) {
+  const parts = [];
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let last = 0;
+  let index = 0;
+  for (const match of text.matchAll(regex)) {
+    const at = match.index ?? 0;
+    if (at > last) parts.push(text.slice(last, at));
+    const tok = match[0] ?? "";
+    if (tok.startsWith("**")) parts.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: tok.slice(2, -2) }, `b${index++}`));
+    else parts.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { className: "ctm-code", children: tok.slice(1, -1) }, `c${index++}`));
+    last = at + tok.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+function renderMarkdown(text) {
+  const lines = text.split("\n");
+  const out = [];
+  let codeBuf = [];
+  let inCode = false;
+  let key = 0;
+  const flush = () => {
+    if (codeBuf.length > 0) {
+      out.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("pre", { className: "ctm-md-code", children: codeBuf.join("\n") }, `code${key++}`));
+      codeBuf = [];
+    }
+  };
+  for (const line of lines) {
+    if (line.trim().startsWith("```")) {
+      if (inCode) {
+        flush();
+        inCode = false;
+      } else {
+        inCode = true;
+      }
+      ;
+      continue;
+    }
+    if (inCode) {
+      codeBuf.push(line);
+      continue;
+    }
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      flush();
+      continue;
+    }
+    const h = trimmed.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      flush();
+      out.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ctm-md-h", children: renderInline(h[2]) }, `h${key++}`));
+      continue;
+    }
+    const ul = trimmed.match(/^[-*]\s+(.*)$/);
+    const ol = trimmed.match(/^\d+[.)]\s+(.*)$/);
+    if (ul || ol) {
+      out.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ctm-md-list", children: [
+        "\u2022 ",
+        renderInline((ul ?? ol)[1])
+      ] }, `li${key++}`));
+      continue;
+    }
+    out.push(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ctm-md-p", children: renderInline(line) }, `p${key++}`));
+  }
+  flush();
+  return out.length ? out : [/* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ctm-md-p", children: text }, "fallback")];
+}
+
+// src/client/text.ts
+function unescapeText(s) {
+  if (!s) return s;
+  const BS = String.fromCharCode(92);
+  const LF = String.fromCharCode(10);
+  const TAB = String.fromCharCode(9);
+  const NUL = String.fromCharCode(0);
+  let out = s.split(BS + BS).join(NUL);
+  out = out.split(BS + "n").join(LF);
+  out = out.split(BS + "t").join(TAB);
+  out = out.split(BS + "r").join("");
+  out = out.split(BS + '"').join('"');
+  out = out.split(NUL).join(BS);
+  return out;
+}
+
+// src/client/segment-card.tsx
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var CONTENT_FOLD_CHARS = 240;
+function SegmentContent({ seg, sh }) {
+  const raw = seg.content;
+  const long = raw.length > CONTENT_FOLD_CHARS;
+  const open = sh.isOpen("content", seg.id);
+  const show = long ? open ? raw : raw.slice(0, CONTENT_FOLD_CHARS) + "\u2026" : raw;
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `ctm-content${long && !open ? " trunc" : ""}`, children: renderMarkdown(show) }),
+    long && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => sh.toggle("content", seg.id), children: open ? sh.t("collapse") : sh.t("expand") })
+  ] });
+}
+function ToolCalls({ seg, sh }) {
+  if (!seg.toolCalls?.length) return null;
+  const open = sh.isOpen("tools", seg.id);
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-tools", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => sh.toggle("tools", seg.id), children: (open ? sh.t("collapse") : sh.t("expand")) + " " + seg.toolCalls.length + " " + sh.t("toolCalls") }),
+    open && seg.toolCalls.map((tc, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ctm-toolitem", children: "\u25B8 " + (tc.name ?? "") + "\n" + unescapeText(String(tc.arguments ?? "")) }, i))
+  ] });
+}
+function SegmentCard({ seg, sh }) {
+  const t = sh.t;
+  const isSystem = seg.source === "system_inject";
+  const isUserInput = seg.role === "user" && seg.source === "user_input";
+  const isEditing = sh.editing?.id === seg.id;
+  const eff = seg.effectiveness || "effective";
+  const thinkOpen = sh.isOpen("think", seg.id);
+  const meta3 = [
+    roleLabel(t, seg.role),
+    seg.turn != null ? `${t("turn")} ${seg.turn}${seg.step != null ? "." + seg.step : ""}` : null,
+    `#${seg.turn_index}`,
+    fmtTime(seg.created_at),
+    seg.edited ? t("edited") : null
+  ].filter(Boolean).join(" \xB7 ");
+  const effPrefix = seg.strongStale ? "\u26A0 " : eff === "redundant" ? "\u2248 " : "";
+  const body = isEditing ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-hint", children: [
+    t("editing"),
+    "\u2026"
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SegmentContent, { seg, sh }),
+    seg.reasoning && seg.role === "assistant" && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => sh.toggle("think", seg.id), children: (thinkOpen ? t("collapse") : t("expand")) + " " + t("thinking") }),
+      thinkOpen && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ctm-thinking", children: seg.reasoning })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ToolCalls, { seg, sh }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-actions", children: [
+      !isSystem && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
+      seg.id === "seg-system" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.setEditing({ id: seg.id, text: seg.content, role: roleLabel(t, seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
+      !isSystem && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle danger", disabled: sh.busy, onClick: () => sh.askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
+      isUserInput && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", title: t("rollbackTip"), disabled: sh.busy, onClick: () => sh.askConfirm("rollback", { turnIndex: seg.turn_index }), children: t("rollback") }),
+      !isSystem && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: sh.busy, onClick: () => sh.askConfirm("override", { segmentId: seg.id, value: seg.effectiveness === "effective" ? "stale" : "effective" }), children: seg.effectiveness === "effective" ? t("markStale") : t("markEffective") })
+    ] })
+  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `ctm-card eff-${eff}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ctm-meta", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: meta3 }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "ctm-badge cache", title: cacheTip(t, seg.cache_status), children: cacheLabel(t, seg.cache_status) }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: `ctm-badge eff-${eff}`, title: effTip(t, eff), children: effPrefix + effLabel(t, eff) }),
+      seg.pending && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "ctm-badge pending", title: t("pendingTip"), children: t("pending") })
+    ] }),
+    body
+  ] });
+}
+
+// src/client/turn-node.tsx
+var import_jsx_runtime5 = require("react/jsx-runtime");
+function nodeSuggestion(sh, node) {
+  const t = sh.t;
+  const zhL = sh.lang === "zh";
+  if (node.kind === "system") return `**${t("suggestion")}\uFF1A**
+- ${zhL ? "\u65E0\u9700\u5904\u7406\uFF08\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u4E0D\u53EF\u5220\u9664\uFF0C\u4E14\u6A21\u578B\u6BCF\u6B21\u63A8\u7406\u90FD\u9700\u8981\uFF09\u3002" : "No action needed (system-injected content cannot be deleted and is needed every step)."}`;
+  if (node.kind === "user") return `**${t("suggestion")}\uFF1A**
+- ${zhL ? "\u4FDD\u7559\uFF08\u8FD9\u662F\u4F60\u7684\u5B9E\u9645\u8BF7\u6C42\uFF0C\u6A21\u578B\u4F9D\u8D56\u5B83\u624D\u80FD\u56DE\u7B54\uFF09\u3002" : "Keep it (this is your actual request; the model needs it to answer)."}`;
+  const stale = node.segments.filter((s) => s.effectiveness === "stale").length;
+  const redundant = node.segments.filter((s) => s.effectiveness === "redundant").length;
+  const lines = [];
+  if (stale + redundant > 0) lines.push(`- ${zhL ? `\u8BE5\u8F6E\u6B21\u6709 ${stale} \u6761\u8FC7\u671F\u3001${redundant} \u6761\u5197\u4F59\u7247\u6BB5\uFF0C\u53EF\u5220\u9664\u4EE5\u8282\u7701 Token\uFF08\u6A21\u578B\u5DF2\u4E0D\u518D\u4F7F\u7528\u8FD9\u4E9B\u5185\u5BB9\uFF09\u3002` : `This turn has ${stale} stale and ${redundant} redundant segments; delete them to save tokens (the model no longer uses them).`}`);
+  lines.push(`- ${zhL ? "\u5176\u4F59\u300C\u6709\u6548\u300D\u7247\u6BB5\u8BF7\u4FDD\u7559\uFF08\u662F\u5BF9\u8BDD\u4E3B\u7EBF\uFF0C\u5220\u9664\u4F1A\u5F71\u54CD\u56DE\u7B54\u8D28\u91CF\uFF09\u3002" : "Keep the remaining effective segments (they are the conversation backbone; deleting them harms answer quality)."}`);
+  return `**${t("suggestion")}\uFF1A**
+${lines.join("\n")}`;
+}
+function nodeExplain(sh, node) {
+  const t = sh.t;
+  let head;
+  if (node.kind === "turn") head = `**${t("turn")} ${node.turn}** = ${t("expTurn")}`;
+  else if (node.kind === "system") head = `**${t("systemInput")}** = ${t("expSystem")}`;
+  else head = `**${t("userInput")}** = ${t("expUserInput")}`;
+  return `${head}
+
+- **${node.segments.length} ${t("seg")}** = ${t("expSegCount")}
+
+${nodeSuggestion(sh, node)}`;
+}
+function StepSection({ step, sh }) {
+  const t = sh.t;
+  const segs = step.segments;
+  const assistant = segs.filter((s) => s.role === "assistant");
+  const tools = segs.filter((s) => s.role === "tool");
+  const other = segs.filter((s) => s.role !== "assistant" && s.role !== "tool");
+  const open = sh.isOpen("steps", step.key);
+  const baseLabel = step.sourceKind ? sourceKindLabel(t, segs[0]) : roleLabel(t, step.label);
+  const label = step.num != null ? `${baseLabel} ${step.num}` : step.label.startsWith("step-") ? `${t("step")} ${step.label.slice(5)}` : baseLabel;
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-step-head", onClick: () => sh.toggle("steps", step.key), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
+        (open ? "\u25BE " : "\u25B8 ") + label,
+        assistant.length ? ` \xB7 ${assistant.length} ${t("assistant")}` : "",
+        tools.length ? ` \xB7 ${tools.length} ${t("toolResults")}` : "",
+        other.length ? ` \xB7 ${other.length}` : ""
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { className: "ctm-node-sub", children: [
+        step.turn != null ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "ctm-turn-label", children: `${t("turn")} ${step.turn}` }) : null,
+        " ",
+        segs.length,
+        " ",
+        t("seg")
+      ] })
+    ] }),
+    open && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: [...other, ...assistant, ...tools].map((seg) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SegmentCard, { seg, sh }, seg.id)) })
+  ] });
+}
+function TurnNode({ node, sh }) {
+  const t = sh.t;
+  const open = sh.isOpen("turns", node.key);
+  const explainOpen = sh.isOpen("explain", node.key) || sh.explainHover === node.key;
+  const title = node.kind === "system" ? t("systemInput") : node.kind === "user" ? t("userInput") : `${t("turn")} ${node.turn}`;
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: `ctm-node ${node.kind === "system" ? "system" : ""}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-title-wrap", onClick: () => sh.toggle("turns", node.key), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "ctm-node-title", children: (open ? "\u25BE " : "\u25B8 ") + title }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-node-sub", children: [
+          node.segments.length,
+          " ",
+          t("seg")
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "ctm-node-actions", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ctm-explain-wrap", onMouseEnter: () => sh.setExplainHover(node.key), onMouseLeave: () => sh.setExplainHover(null), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => sh.toggle("explain", node.key), children: t("explain") }),
+        explainOpen && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "ctm-explain", children: renderMarkdown(nodeExplain(sh, node)) })
+      ] }) })
+    ] }),
+    open && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: node.steps.map((step) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(StepSection, { step, sh }, step.key)) })
+  ] });
+}
+
+// src/client/dialogs.tsx
+var import_jsx_runtime6 = require("react/jsx-runtime");
+function opInfo(sh, name) {
+  const t = sh.t;
+  const zhL = sh.lang === "zh";
+  const realtime = sh.state.realtime;
+  if (name === "replace") return { title: t("replace"), impact: zhL ? "\u53EA\u4FEE\u6539\u8BE5\u7247\u6BB5\u7684\u6B63\u6587\u5185\u5BB9\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E\u6240\u6709\u7247\u6BB5\u7684\u7F13\u5B58\u6807\u8BB0\u90FD\u4F1A\u5931\u6548\uFF08\u524D\u7F00\u7F13\u5B58\u65AD\u88C2\uFF09\u3002" : "Only edits this segment's text; it and every later segment lose their cache mark (prefix break).", risk: zhL ? realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u66FF\u6362\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u540E\u751F\u6548\uFF08\u671F\u95F4\u6807\u8BB0\u300C\u5F85\u751F\u6548\u300D\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4FEE\u6539\u89C6\u56FE\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : realtime ? `Apply-for-real is ON: the replacement is written to the session log at the model's next step (shown as "pending" until then).` : "Apply-for-real is OFF: view-only; the model still receives the original content." };
+  if (name === "delete") return { title: t("delete"), impact: zhL ? "\u628A\u8BE5\u7247\u6BB5\u8F6F\u5220\u9664\uFF08\u8FDB\u56DE\u6536\u7AD9\uFF0C\u672C\u4F1A\u8BDD\u53EF\u64A4\u9500\uFF09\uFF1Bturn_index \u4FDD\u7559\u7A7A\u6D1E\uFF1B\u7F13\u5B58\u9884\u6D4B\u91CD\u7B97\u3002" : "Soft-deletes the segment (to trash, undoable this session); turn_index keeps its hole; cache prediction recalculates.", risk: zhL ? realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u8BE5\u7247\u6BB5\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF08replay \u4E0E token \u8BA1\u91CF\u81EA\u52A8\u4E00\u81F4\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4ECE\u89C6\u56FE\u79FB\u9664\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : realtime ? "Apply-for-real is ON: at the model's next step the segment is replaced by a placeholder marker, written to the session log (replay and token accounting stay consistent)." : "Apply-for-real is OFF: view-only; the model still receives this segment." };
+  if (name === "rollback") return { title: t("rollback"), impact: zhL ? "\u628A\u8BE5\u8F6E\u6B21\u4E4B\u540E\u7684\u6240\u6709\u7247\u6BB5\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u4E0D\u5220\u9664\uFF09\uFF0C\u5E76\u751F\u6210\u4E00\u4E2A\u5FEB\u7167\u3002" : "Marks every later segment stale (kept, not deleted) and creates a snapshot.", risk: zhL ? realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u56DE\u9000\u533A\u95F4\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u5355\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF1B\u539F\u59CB\u5185\u5BB9\u4ECD\u7559\u5728\u65E5\u5FD7\u7684 transcript \u91CC\u3002" : "\u8FD9\u4E9B\u7247\u6BB5\u4F1A\u8FDB\u5165\u300C\u5DF2\u56DE\u9000\u300D\u6298\u53E0\u533A\uFF0C\u53EF\u968F\u65F6\u524D\u6EDA\u6062\u590D\u3002" : realtime ? "Apply-for-real is ON: the rolled-back range is replaced by one placeholder marker at the next step and logged; the originals stay in the log transcript." : "They move to the rolled-back folded area; you can roll forward anytime." };
+  if (name === "override") return { title: `${t("markStale")} / ${t("markEffective")}`, impact: zhL ? "\u4EC5\u624B\u52A8\u8986\u76D6\u8BE5\u7247\u6BB5\u7684\u6709\u6548\u6027\u6807\u8BB0\uFF08\u5F71\u54CD\u989C\u8272\u4E0E\u5EFA\u8BAE\uFF09\uFF0C\u4E0D\u6539\u53D8\u5185\u5BB9\u3002" : "Only overrides the effectiveness label (color/suggestion); content unchanged.", risk: zhL ? "\u65E0\u98CE\u9669\uFF08\u7EAF\u6807\u6CE8\uFF0C\u53EF\u518D\u6B21\u70B9\u51FB\u53D6\u6D88\u8986\u76D6\uFF09\u3002" : "No risk (label only; click again to clear)." };
+  if (name === "reset") return { title: t("reset"), impact: zhL ? "\u6E05\u7A7A\u6240\u6709\u7F16\u8F91\uFF08\u66FF\u6362/\u5220\u9664/\u56DE\u9000/\u5FEB\u7167\uFF09\uFF0C\u56DE\u5230\u6700\u65B0\u5B9E\u65F6\u4E0A\u4E0B\u6587\u3002" : "Clears all edits (replace/delete/rollback/snapshots) and returns to the latest live context.", risk: zhL ? "\u4E0D\u53EF\u64A4\u9500\u2014\u2014\u4E4B\u524D\u7684\u7F16\u8F91\u4F1A\u5168\u90E8\u4E22\u5931\u3002" : "Irreversible \u2014 all prior edits are lost." };
+  if (name === "restore") return { title: t("restore"), impact: zhL ? "\u6062\u590D\u5230\u8BE5\u5FEB\u7167\u4FDD\u5B58\u65F6\u7684\u4E0A\u4E0B\u6587\uFF08\u9010\u5B57\u8282\u4E00\u81F4\uFF09\uFF0C\u5E76\u6E05\u9664\u6B64\u540E\u7684\u7F16\u8F91\u3002" : "Restores the context exactly as saved in that snapshot; clears later edits.", risk: zhL ? "\u5FEB\u7167\u4E4B\u540E\u7684\u7F16\u8F91\u4F1A\u4E22\u5931\u3002" : "Edits made after the snapshot are lost." };
+  if (name === "undo") return { title: t("undo"), impact: zhL ? "\u64A4\u9500\u6700\u8FD1\u4E00\u6B21\u64CD\u4F5C\uFF1A\u8FD8\u672A\u751F\u6548\u7684\u6392\u961F\u7F16\u8F91\u76F4\u63A5\u79FB\u9664\uFF1B\u5DF2\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u4EE5\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002\u4EC5\u652F\u6301\u64A4\u9500\u6700\u8FD1\u4E00\u7EC4\u64CD\u4F5C\u3002" : "Undoes the most recent operation: a queued (not yet applied) edit is simply removed; an already-logged edit is reversed by a counter-edit at the model's next step. Only the latest operation can be undone.", risk: zhL ? "\u65E0\u98CE\u9669\u3002" : "No risk." };
+  if (name === "setRealtime") return { title: t("realtime"), impact: zhL ? "\u5F00\u542F\u540E\uFF0C\u66FF\u6362/\u5220\u9664/\u56DE\u9000\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u5E76\u771F\u6B63\u751F\u6548\uFF08\u771F\u6B63\u8282\u7701 token\uFF09\uFF1B\u5DF2\u505A\u7684\u89C6\u56FE\u7F16\u8F91\u4F1A\u4E00\u5E76\u5165\u961F\u3002" : "When ON, replace/delete/rollback are written to the session log at the model's next step and truly take effect (really saves tokens); pending view edits are queued too.", risk: zhL ? "\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4E0D\u53EF\u62B9\u9664\uFF0C\u53EA\u80FD\u518D\u5199\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\uFF1Breplay \u4E0E token \u8BA1\u91CF\u59CB\u7EC8\u4E0E\u6A21\u578B\u5B9E\u9645\u6240\u89C1\u4E00\u81F4\u3002" : "A logged edit cannot be erased, only reversed by a counter-edit; replay and token accounting always match what the model actually saw." };
+  return { title: t("confirmTitle"), impact: "", risk: "" };
+}
+function ConfirmModal({ sh, op, onClose, onExec }) {
+  const t = sh.t;
+  const info = opInfo(sh, op.name);
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "ctm-modal-overlay", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-modal", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "ctm-node-title", children: `${t("confirmTitle")}\uFF1A${info.title}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-modal-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("b", { children: t("impact") }),
+      info.impact
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-modal-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("b", { children: t("risk") }),
+      info.risk
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-actions", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "ctm-btn danger", disabled: sh.busy, onClick: () => {
+        onClose();
+        onExec(op.name, op.args);
+      }, children: t("confirm") }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "ctm-btn", onClick: onClose, children: t("cancel") })
+    ] })
+  ] }) });
+}
+function Editor({ sh }) {
+  const editing = sh.editing;
+  if (!editing) return null;
+  const t = sh.t;
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-editor", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "ctm-node-title", children: `${t("replace")} \xB7 ${editing.role} #${editing.turnIndex}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("textarea", { className: "ctm-textarea", value: editing.text, onChange: (e) => sh.setEditing({ ...editing, text: e.target.value }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "ctm-actions", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "ctm-btn primary", disabled: sh.busy, onClick: () => sh.askConfirm("replace", { segmentId: editing.id, content: editing.text }), children: t("save") }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "ctm-btn", disabled: sh.busy, onClick: () => sh.setEditing(null), children: t("cancel") })
+    ] })
+  ] });
+}
+
+// src/client/view.tsx
+var import_jsx_runtime7 = require("react/jsx-runtime");
+var PAGE_SIZE = 2;
+var stateCache = /* @__PURE__ */ new Map();
 function CtmView(props) {
   const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession } = props;
-  const [lang, setLang] = (0, import_react.useState)("en");
-  const [state, setState] = (0, import_react.useState)(null);
-  const [loading, setLoading] = (0, import_react.useState)(true);
-  const [error51, setError] = (0, import_react.useState)(null);
-  const [expTurns, setExpTurns] = (0, import_react.useState)({});
-  const [expSteps, setExpSteps] = (0, import_react.useState)({});
-  const [expTools, setExpTools] = (0, import_react.useState)({});
-  const [expContent, setExpContent] = (0, import_react.useState)({});
-  const [expThink, setExpThink] = (0, import_react.useState)({});
-  const [explainPin, setExplainPin] = (0, import_react.useState)({});
-  const [explainHover, setExplainHover] = (0, import_react.useState)(null);
-  const [page, setPage] = (0, import_react.useState)(0);
-  const [legendHover, setLegendHover] = (0, import_react.useState)(false);
-  const [editing, setEditing] = (0, import_react.useState)(null);
-  const [confirmOp, setConfirmOp] = (0, import_react.useState)(null);
-  const [busy, setBusy] = (0, import_react.useState)(false);
-  const [showSnap, setShowSnap] = (0, import_react.useState)(false);
-  const [showTrash, setShowTrash] = (0, import_react.useState)(false);
-  const inFlightRef = (0, import_react.useRef)(false);
-  const pendingRefreshRef = (0, import_react.useRef)(false);
-  const lastVersionRef = (0, import_react.useRef)(0);
-  const editingRef = (0, import_react.useRef)(editing);
-  (0, import_react.useEffect)(() => {
+  const [lang, setLang] = (0, import_react2.useState)("en");
+  const [state, setState] = (0, import_react2.useState)(null);
+  const [loading, setLoading] = (0, import_react2.useState)(true);
+  const [error51, setError] = (0, import_react2.useState)(null);
+  const expansion = useExpansion();
+  const [explainHover, setExplainHover] = (0, import_react2.useState)(null);
+  const [legendHover, setLegendHover] = (0, import_react2.useState)(false);
+  const [page, setPage] = (0, import_react2.useState)(0);
+  const [editing, setEditing] = (0, import_react2.useState)(null);
+  const [confirmOp, setConfirmOp] = (0, import_react2.useState)(null);
+  const [busy, setBusy] = (0, import_react2.useState)(false);
+  const [showSnap, setShowSnap] = (0, import_react2.useState)(false);
+  const [showTrash, setShowTrash] = (0, import_react2.useState)(false);
+  const inFlightRef = (0, import_react2.useRef)(false);
+  const pendingRefreshRef = (0, import_react2.useRef)(false);
+  const lastVersionRef = (0, import_react2.useRef)(0);
+  const editingRef = (0, import_react2.useRef)(editing);
+  (0, import_react2.useEffect)(() => {
     editingRef.current = editing;
   }, [editing]);
-  const [showRolledBack, setShowRolledBack] = (0, import_react.useState)(false);
-  const [minimized, setMinimized] = (0, import_react.useState)(false);
+  const [showRolledBack, setShowRolledBack] = (0, import_react2.useState)(false);
+  const [minimized, setMinimized] = (0, import_react2.useState)(false);
   const nodeCount = useSession ? useSession((s) => s?.chat?.legacy?.nodes?.length ?? 0) : 0;
   const running = useSession ? useSession((s) => !!s?.running) : false;
   const dict = lang === "zh" ? zh : en;
-  const t = (0, import_react.useCallback)((k) => dict[k] ?? en[k] ?? k, [dict]);
-  const applyState = (0, import_react.useCallback)((s) => {
+  const t = (0, import_react2.useCallback)((k) => dict[k] ?? en[k] ?? k, [dict]);
+  const applyState = (0, import_react2.useCallback)((s) => {
     if (s.version < lastVersionRef.current) return false;
     lastVersionRef.current = s.version;
     if (sessionId) stateCache.set(sessionId, s);
     setState(s);
     return true;
   }, [sessionId]);
-  const load = (0, import_react.useCallback)(async (silent) => {
+  const load = (0, import_react2.useCallback)(async (silent) => {
     if (inFlightRef.current) {
       pendingRefreshRef.current = true;
       return;
@@ -565,7 +997,7 @@ function CtmView(props) {
       }
     }
   }, [getState, applyState]);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     const cached2 = sessionId ? stateCache.get(sessionId) : void 0;
     lastVersionRef.current = cached2?.version ?? 0;
     if (cached2) {
@@ -574,11 +1006,11 @@ function CtmView(props) {
     }
     void load(cached2 !== void 0);
   }, [sessionId]);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (state === null) return;
     void load(true);
   }, [sessionId, nodeCount, running]);
-  const run = (0, import_react.useCallback)(async (fn) => {
+  const run = (0, import_react2.useCallback)(async (fn) => {
     setBusy(true);
     setError(null);
     try {
@@ -590,417 +1022,97 @@ function CtmView(props) {
       setBusy(false);
     }
   }, [applyState]);
-  const toggle = (key, map2, setMap) => {
-    setMap((p) => ({ ...p, [key]: !p[key] }));
-  };
-  const roleLabel = (role) => role === "system" ? t("roleSystem") : role === "user" ? t("roleUser") : role === "assistant" ? t("roleAssistant") : role === "tool" ? t("roleTool") : role;
-  const cacheLabel = (cs) => cs === "hit" ? t("cacheHitLabel") : cs === "miss" ? t("cacheMissLabel") : cs === "partial" ? t("cachePartial") : t("cacheUnknown");
-  const effLabel = (eff) => eff === "effective" ? t("effEffective") : eff === "redundant" ? t("effRedundant") : eff === "stale" ? t("effStale") : eff === "injected" ? t("effInjected") : eff;
-  const cacheTip = (cs) => cs === "hit" ? t("tipCacheHit") : cs === "miss" ? t("tipCacheMiss") : cs === "partial" ? t("tipCachePartial") : "";
-  const effTip = (eff) => eff === "effective" ? t("tipEffective") : eff === "redundant" ? t("tipRedundant") : eff === "stale" ? t("tipStale") : eff === "injected" ? t("tipInjected") : "";
-  const fmtTime = (tm) => tm ? new Date(tm).toLocaleTimeString() : "";
-  const fmtNum = (n) => n == null ? "\u2014" : String(n);
-  const sourceKindLabel = (seg) => {
-    if (seg.source === "system_inject") {
-      if (seg.sourceKind === "system") return t("initialSystemPrompt");
-      if (seg.sourceKind === "skill-catalog") return t("skillCatalog");
-      if (seg.sourceKind === "approval-policy") return t("approvalPolicy");
-      return t("systemPromptSection");
-    }
-    return roleLabel(seg.role);
-  };
-  const borderClass = (seg) => {
-    if (seg.source === "system_inject" || seg.source === "summary_compress") return "system";
-    if (seg.strongStale) return "red";
-    if (seg.effectiveness === "redundant" || seg.effectiveness === "stale") return "yellow";
-    if (seg.cache_status === "hit") return "green";
-    if (seg.cache_status === "miss") return "blue";
-    return "";
-  };
-  const noticeText = (notice) => {
-    if (!notice) return null;
-    const c = notice.text;
-    if (/^replaced_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u66FF\u6362\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E ${c.split("_")[1]} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09` : `Replaced; this segment and the next ${c.split("_")[1]} messages lost their cache (prefix break).`;
-    if (/^replaced_queued_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u66FF\u6362\u5E76\u5165\u961F\uFF1A\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E ${c.split("_")[2]} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09` : `Replaced and queued: logged at the model's next step; this segment and the next ${c.split("_")[2]} messages lose their cache (prefix break).`;
-    if (/^rolled_back_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u56DE\u9000\uFF1B\u5176\u540E ${c.split("_").slice(2).join("_")} \u6761\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u672A\u5220\u9664\uFF09` : `Rolled back; ${c.split("_").slice(2).join("_")} later segments marked stale (kept).`;
-    if (/^rollback_queued_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u56DE\u9000\u5E76\u5165\u961F\uFF1A\u5176\u540E ${c.split("_")[2]} \u6761\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\uFF08\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF09` : `Rolled back and queued: ${c.split("_")[2]} later segments will be replaced by one placeholder marker at the next step (logged).`;
-    if (/^deleted_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u5220\u9664 ${c.split("_")[1]} \u6761\u7247\u6BB5\uFF08\u8F6F\u5220\u9664\uFF0C\u53EF\u64A4\u9500\uFF09` : `Deleted ${c.split("_")[1]} segments (soft delete, undoable).`;
-    if (/^realtime_on_queued_\d+$/.test(c)) return lang === "zh" ? `\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A${c.split("_")[3]} \u9879\u89C6\u56FE\u7F16\u8F91\u5DF2\u5165\u961F\uFF0C\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548` : `Apply-for-real ON: ${c.split("_")[3]} view edit(s) queued; they are logged and take effect at the model's next step.`;
-    if (/^override_(\w+)$/.test(c)) return (lang === "zh" ? "\u5DF2\u624B\u52A8\u6807\u8BB0\u4E3A " : "Manually marked as ") + effLabel(c.slice(9));
-    const map2 = {
-      segment_not_found: "segNotFound",
-      cannot_replace_system: "cannotReplaceSystem",
-      tool_readonly: "toolReadonly",
-      invalid_turn: "invalidTurn",
-      snapshot_not_found: "snapshotNotFound",
-      restored: "restored",
-      reset: "resetDone",
-      cannot_delete_system: "cannotDeleteSystem",
-      cannot_delete_current_user: "cannotDeleteUser",
-      nothing_to_delete: "nothingDelete",
-      nothing_to_undo: "nothingUndo",
-      undone: "undoneNotice",
-      override_cleared: "overrideCleared",
-      invalid_effectiveness: "invalidEff",
-      realtime_on: "realtimeOnNotice",
-      realtime_off: "realtimeOffNotice",
-      deleted_queued: "deletedQueued",
-      replaced_system: "replacedSystem",
-      session_not_live: "sessionNotLive",
-      segment_gone: "segmentGone",
-      unbalanced_edit: "unbalancedEdit",
-      tool_result_changed: "toolResultChanged",
-      invalid_template: "invalidTemplate",
-      undone_queued: "undoneQueued",
-      undo_unavailable: "undoUnavailable"
-    };
-    if (map2[c] !== void 0) return t(map2[c]);
-    return c;
-  };
-  const groupNodes = (segments) => {
-    const sys = [];
-    const usr = [];
-    const byTurn = /* @__PURE__ */ new Map();
-    const turnNums = [];
-    for (const s of segments) {
-      if (s.source === "system_inject") sys.push(s);
-      else if (s.role === "user" && s.source === "user_input") usr.push(s);
-      else if (s.turn != null) {
-        const arr = byTurn.get(s.turn) ?? [];
-        arr.push(s);
-        byTurn.set(s.turn, arr);
-        turnNums.push(s.turn);
-      } else usr.push(s);
-    }
-    const firstTurn = turnNums.length ? Math.min(...turnNums) : 1;
-    const nodes2 = [];
-    if (usr.length) nodes2.push({ key: "input", kind: "user", turn: null, belongsToTurn: firstTurn, segments: usr, steps: [] });
-    if (sys.length) nodes2.push({ key: "sys", kind: "system", turn: null, belongsToTurn: firstTurn, segments: sys, steps: [] });
-    for (const tn of [...byTurn.keys()].sort((a, b) => a - b)) nodes2.push({ key: `turn-${tn}`, kind: "turn", turn: tn, segments: byTurn.get(tn), steps: [] });
-    for (const node of nodes2) {
-      if (node.kind !== "turn") {
-        node.steps = node.segments.map((s, idx) => ({ key: `${node.key}::seg-${s.id}`, label: s.role, num: idx + 1, turn: s.turn ?? void 0, sourceKind: s.sourceKind, segments: [s] }));
-      } else {
-        const byStep = /* @__PURE__ */ new Map();
-        for (const s of node.segments) {
-          const k = s.step == null ? "step-null" : `step-${s.step}`;
-          const arr = byStep.get(k) ?? [];
-          arr.push(s);
-          byStep.set(k, arr);
-        }
-        const keys = [...byStep.keys()].sort((a, b) => {
-          const na = a === "step-null" ? -1 : parseInt(a.slice(5), 10);
-          const nb = b === "step-null" ? -1 : parseInt(b.slice(5), 10);
-          return na - nb;
-        });
-        node.steps = keys.map((k) => ({ key: `${node.key}::${k}`, label: k, segments: byStep.get(k) }));
-      }
-    }
-    return nodes2;
-  };
-  const opInfo = (name) => {
-    const zhL = lang === "zh";
-    if (name === "replace") return { title: t("replace"), impact: zhL ? "\u53EA\u4FEE\u6539\u8BE5\u7247\u6BB5\u7684\u6B63\u6587\u5185\u5BB9\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E\u6240\u6709\u7247\u6BB5\u7684\u7F13\u5B58\u6807\u8BB0\u90FD\u4F1A\u5931\u6548\uFF08\u524D\u7F00\u7F13\u5B58\u65AD\u88C2\uFF09\u3002" : "Only edits this segment's text; it and every later segment lose their cache mark (prefix break).", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u66FF\u6362\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u540E\u751F\u6548\uFF08\u671F\u95F4\u6807\u8BB0\u300C\u5F85\u751F\u6548\u300D\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4FEE\u6539\u89C6\u56FE\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : state?.realtime ? `Apply-for-real is ON: the replacement is written to the session log at the model's next step (shown as "pending" until then).` : "Apply-for-real is OFF: view-only; the model still receives the original content." };
-    if (name === "delete") return { title: t("delete"), impact: zhL ? "\u628A\u8BE5\u7247\u6BB5\u8F6F\u5220\u9664\uFF08\u8FDB\u56DE\u6536\u7AD9\uFF0C\u672C\u4F1A\u8BDD\u53EF\u64A4\u9500\uFF09\uFF1Bturn_index \u4FDD\u7559\u7A7A\u6D1E\uFF1B\u7F13\u5B58\u9884\u6D4B\u91CD\u7B97\u3002" : "Soft-deletes the segment (to trash, undoable this session); turn_index keeps its hole; cache prediction recalculates.", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u8BE5\u7247\u6BB5\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF08replay \u4E0E token \u8BA1\u91CF\u81EA\u52A8\u4E00\u81F4\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4ECE\u89C6\u56FE\u79FB\u9664\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : state?.realtime ? "Apply-for-real is ON: at the model's next step the segment is replaced by a placeholder marker, written to the session log (replay and token accounting stay consistent)." : "Apply-for-real is OFF: view-only; the model still receives this segment." };
-    if (name === "rollback") return { title: t("rollback"), impact: zhL ? "\u628A\u8BE5\u8F6E\u6B21\u4E4B\u540E\u7684\u6240\u6709\u7247\u6BB5\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u4E0D\u5220\u9664\uFF09\uFF0C\u5E76\u751F\u6210\u4E00\u4E2A\u5FEB\u7167\u3002" : "Marks every later segment stale (kept, not deleted) and creates a snapshot.", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u56DE\u9000\u533A\u95F4\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u5355\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF1B\u539F\u59CB\u5185\u5BB9\u4ECD\u7559\u5728\u65E5\u5FD7\u7684 transcript \u91CC\u3002" : "\u8FD9\u4E9B\u7247\u6BB5\u4F1A\u8FDB\u5165\u300C\u5DF2\u56DE\u9000\u300D\u6298\u53E0\u533A\uFF0C\u53EF\u968F\u65F6\u524D\u6EDA\u6062\u590D\u3002" : state?.realtime ? "Apply-for-real is ON: the rolled-back range is replaced by one placeholder marker at the next step and logged; the originals stay in the log transcript." : "They move to the rolled-back folded area; you can roll forward anytime." };
-    if (name === "override") return { title: `${t("markStale")} / ${t("markEffective")}`, impact: zhL ? "\u4EC5\u624B\u52A8\u8986\u76D6\u8BE5\u7247\u6BB5\u7684\u6709\u6548\u6027\u6807\u8BB0\uFF08\u5F71\u54CD\u989C\u8272\u4E0E\u5EFA\u8BAE\uFF09\uFF0C\u4E0D\u6539\u53D8\u5185\u5BB9\u3002" : "Only overrides the effectiveness label (color/suggestion); content unchanged.", risk: zhL ? "\u65E0\u98CE\u9669\uFF08\u7EAF\u6807\u6CE8\uFF0C\u53EF\u518D\u6B21\u70B9\u51FB\u53D6\u6D88\u8986\u76D6\uFF09\u3002" : "No risk (label only; click again to clear)." };
-    if (name === "reset") return { title: t("reset"), impact: zhL ? "\u6E05\u7A7A\u6240\u6709\u7F16\u8F91\uFF08\u66FF\u6362/\u5220\u9664/\u56DE\u9000/\u5FEB\u7167\uFF09\uFF0C\u56DE\u5230\u6700\u65B0\u5B9E\u65F6\u4E0A\u4E0B\u6587\u3002" : "Clears all edits (replace/delete/rollback/snapshots) and returns to the latest live context.", risk: zhL ? "\u4E0D\u53EF\u64A4\u9500\u2014\u2014\u4E4B\u524D\u7684\u7F16\u8F91\u4F1A\u5168\u90E8\u4E22\u5931\u3002" : "Irreversible \u2014 all prior edits are lost." };
-    if (name === "restore") return { title: t("restore"), impact: zhL ? "\u6062\u590D\u5230\u8BE5\u5FEB\u7167\u4FDD\u5B58\u65F6\u7684\u4E0A\u4E0B\u6587\uFF08\u9010\u5B57\u8282\u4E00\u81F4\uFF09\uFF0C\u5E76\u6E05\u9664\u6B64\u540E\u7684\u7F16\u8F91\u3002" : "Restores the context exactly as saved in that snapshot; clears later edits.", risk: zhL ? "\u5FEB\u7167\u4E4B\u540E\u7684\u7F16\u8F91\u4F1A\u4E22\u5931\u3002" : "Edits made after the snapshot are lost." };
-    if (name === "undo") return { title: t("undo"), impact: zhL ? "\u64A4\u9500\u6700\u8FD1\u4E00\u6B21\u64CD\u4F5C\uFF1A\u8FD8\u672A\u751F\u6548\u7684\u6392\u961F\u7F16\u8F91\u76F4\u63A5\u79FB\u9664\uFF1B\u5DF2\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u4EE5\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002\u4EC5\u652F\u6301\u64A4\u9500\u6700\u8FD1\u4E00\u7EC4\u64CD\u4F5C\u3002" : "Undoes the most recent operation: a queued (not yet applied) edit is simply removed; an already-logged edit is reversed by a counter-edit at the model's next step. Only the latest operation can be undone.", risk: zhL ? "\u65E0\u98CE\u9669\u3002" : "No risk." };
-    if (name === "setRealtime") return { title: t("realtime"), impact: zhL ? "\u5F00\u542F\u540E\uFF0C\u66FF\u6362/\u5220\u9664/\u56DE\u9000\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u5E76\u771F\u6B63\u751F\u6548\uFF08\u771F\u6B63\u8282\u7701 token\uFF09\uFF1B\u5DF2\u505A\u7684\u89C6\u56FE\u7F16\u8F91\u4F1A\u4E00\u5E76\u5165\u961F\u3002" : "When ON, replace/delete/rollback are written to the session log at the model's next step and truly take effect (really saves tokens); pending view edits are queued too.", risk: zhL ? "\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4E0D\u53EF\u62B9\u9664\uFF0C\u53EA\u80FD\u518D\u5199\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\uFF1Breplay \u4E0E token \u8BA1\u91CF\u59CB\u7EC8\u4E0E\u6A21\u578B\u5B9E\u9645\u6240\u89C1\u4E00\u81F4\u3002" : "A logged edit cannot be erased, only reversed by a counter-edit; replay and token accounting always match what the model actually saw." };
-    return { title: t("confirmTitle"), impact: "", risk: "" };
-  };
-  const askConfirm = (name, args) => setConfirmOp({ name, args });
-  const nodeSuggestion = (node) => {
-    if (node.kind === "system") return `**${t("suggestion")}\uFF1A**
-- ${lang === "zh" ? "\u65E0\u9700\u5904\u7406\uFF08\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u4E0D\u53EF\u5220\u9664\uFF0C\u4E14\u6A21\u578B\u6BCF\u6B21\u63A8\u7406\u90FD\u9700\u8981\uFF09\u3002" : "No action needed (system-injected content cannot be deleted and is needed every step)."}`;
-    if (node.kind === "user") return `**${t("suggestion")}\uFF1A**
-- ${lang === "zh" ? "\u4FDD\u7559\uFF08\u8FD9\u662F\u4F60\u7684\u5B9E\u9645\u8BF7\u6C42\uFF0C\u6A21\u578B\u4F9D\u8D56\u5B83\u624D\u80FD\u56DE\u7B54\uFF09\u3002" : "Keep it (this is your actual request; the model needs it to answer)."}`;
-    const stale = node.segments.filter((s) => s.effectiveness === "stale").length;
-    const redundant = node.segments.filter((s) => s.effectiveness === "redundant").length;
-    const lines = [];
-    if (stale + redundant > 0) lines.push(`- ${lang === "zh" ? `\u8BE5\u8F6E\u6B21\u6709 ${stale} \u6761\u8FC7\u671F\u3001${redundant} \u6761\u5197\u4F59\u7247\u6BB5\uFF0C\u53EF\u5220\u9664\u4EE5\u8282\u7701 Token\uFF08\u6A21\u578B\u5DF2\u4E0D\u518D\u4F7F\u7528\u8FD9\u4E9B\u5185\u5BB9\uFF09\u3002` : `This turn has ${stale} stale and ${redundant} redundant segments; delete them to save tokens (the model no longer uses them).`}`);
-    lines.push(`- ${lang === "zh" ? "\u5176\u4F59\u300C\u6709\u6548\u300D\u7247\u6BB5\u8BF7\u4FDD\u7559\uFF08\u662F\u5BF9\u8BDD\u4E3B\u7EBF\uFF0C\u5220\u9664\u4F1A\u5F71\u54CD\u56DE\u7B54\u8D28\u91CF\uFF09\u3002" : "Keep the remaining effective segments (they are the conversation backbone; deleting them harms answer quality)."}`);
-    return `**${t("suggestion")}\uFF1A**
-${lines.join("\n")}`;
-  };
-  const nodeExplain = (node) => {
-    let head;
-    if (node.kind === "turn") head = `**${t("turn")} ${node.turn}** = ${t("expTurn")}`;
-    else if (node.kind === "system") head = `**${t("systemInput")}** = ${t("expSystem")}`;
-    else head = `**${t("userInput")}** = ${t("expUserInput")}`;
-    return `${head}
-
-- **${node.segments.length} ${t("seg")}** = ${t("expSegCount")}
-
-${nodeSuggestion(node)}`;
-  };
-  const renderContent = (seg) => {
-    const raw = seg.content;
-    const long = raw.length > 240;
-    const open = !!expContent[seg.id];
-    const show = long ? open ? raw : raw.slice(0, 240) + "\u2026" : raw;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `ctm-content${long && !open ? " trunc" : ""}`, children: renderMarkdown(show) }),
-      long && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => toggle(seg.id, expContent, setExpContent), children: open ? t("collapse") : t("expand") })
-    ] });
-  };
-  const renderToolCalls = (seg) => {
-    if (!seg.toolCalls?.length) return null;
-    const open = !!expTools[seg.id];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-tools", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => toggle(seg.id, expTools, setExpTools), children: (open ? t("collapse") : t("expand")) + " " + seg.toolCalls.length + " " + t("toolCalls") }),
-      open && seg.toolCalls.map((tc, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-toolitem", children: "\u25B8 " + (tc.name ?? "") + "\n" + unescapeText(String(tc.arguments ?? "")) }, i))
-    ] });
-  };
-  const renderSegment = (seg) => {
-    const isSystem = seg.source === "system_inject";
-    const isUserInput = seg.role === "user" && seg.source === "user_input";
-    const isEditing = editing?.id === seg.id;
-    const thinkOpen = !!expThink[seg.id];
-    const body = isEditing ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-hint", children: [
-      t("editing"),
-      "\u2026"
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      renderContent(seg),
-      seg.reasoning && seg.role === "assistant" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => toggle(seg.id, expThink, setExpThink), children: (thinkOpen ? t("collapse") : t("expand")) + " " + t("thinking") }),
-        thinkOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-thinking", children: seg.reasoning })
-      ] }),
-      renderToolCalls(seg),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-actions", children: [
-        !isSystem && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => setEditing({ id: seg.id, text: seg.content, role: roleLabel(seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
-        seg.id === "seg-system" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => setEditing({ id: seg.id, text: seg.content, role: roleLabel(seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
-        !isSystem && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn danger", disabled: busy, onClick: () => askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
-        isUserInput && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", title: t("rollbackTip"), disabled: busy, onClick: () => askConfirm("rollback", { turnIndex: seg.turn_index }), children: t("rollback") }),
-        !isSystem && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => askConfirm("override", { segmentId: seg.id, value: seg.effectiveness === "effective" ? "stale" : "effective" }), children: seg.effectiveness === "effective" ? t("markStale") : t("markEffective") })
-      ] })
-    ] });
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `ctm-card ${borderClass(seg)}`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dl", { className: "ctm-dl", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("role") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dd", { children: [
-          roleLabel(seg.role),
-          seg.turn != null ? ` \xB7 ${t("turn")} ${seg.turn}${seg.step != null ? "." + seg.step : ""}` : ""
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("cache") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `ctm-badge ${seg.cache_status || "unknown"}`, title: cacheTip(seg.cache_status), children: cacheLabel(seg.cache_status) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("eff") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `ctm-badge eff-${seg.effectiveness || "effective"}`, title: effTip(seg.effectiveness), children: effLabel(seg.effectiveness) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("seg") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dd", { children: [
-          `#${seg.turn_index} \xB7 ${fmtTime(seg.created_at)}${seg.edited ? " \xB7 " + t("edited") : ""}`,
-          seg.pending && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-badge unknown", title: t("pendingTip"), children: t("pending") })
-        ] })
-      ] }),
-      body
-    ] }, seg.id);
-  };
-  const renderStep = (step) => {
-    const segs = step.segments;
-    const assistant = segs.filter((s) => s.role === "assistant");
-    const tools = segs.filter((s) => s.role === "tool");
-    const other = segs.filter((s) => s.role !== "assistant" && s.role !== "tool");
-    const open = !!expSteps[step.key];
-    const baseLabel = step.sourceKind ? sourceKindLabel(segs[0]) : roleLabel(step.label);
-    const label = step.num != null ? `${baseLabel} ${step.num}` : step.label.startsWith("step-") ? `${t("step")} ${step.label.slice(5)}` : baseLabel;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-step", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-step-head", onClick: () => toggle(step.key, expSteps, setExpSteps), children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-          (open ? "\u25BE " : "\u25B8 ") + label,
-          assistant.length ? ` \xB7 ${assistant.length} ${t("assistant")}` : "",
-          tools.length ? ` \xB7 ${tools.length} ${t("toolResults")}` : "",
-          other.length ? ` \xB7 ${other.length}` : ""
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "ctm-node-sub", children: [
-          step.turn != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-turn-label", children: `${t("turn")} ${step.turn}` }) : null,
-          " ",
-          segs.length,
-          " ",
-          t("seg")
-        ] })
-      ] }),
-      open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: [...other, ...assistant, ...tools].map(renderSegment) })
-    ] });
-  };
-  const renderNode = (node) => {
-    const open = !!expTurns[node.key];
-    const explainOpen = !!explainPin[node.key] || explainHover === node.key;
-    const title = node.kind === "system" ? t("systemInput") : node.kind === "user" ? t("userInput") : `${t("turn")} ${node.turn}`;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `ctm-node ${node.kind === "system" ? "system" : ""}`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-node-head", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-node-title-wrap", onClick: () => toggle(node.key, expTurns, setExpTurns), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-node-title", children: (open ? "\u25BE " : "\u25B8 ") + title }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-node-sub", children: [
-            node.segments.length,
-            " ",
-            t("seg")
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-node-actions", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-explain-wrap", onMouseEnter: () => setExplainHover(node.key), onMouseLeave: () => setExplainHover(null), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => toggle(node.key, explainPin, setExplainPin), children: t("explain") }),
-          explainOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-explain", children: renderMarkdown(nodeExplain(node)) })
-        ] }) })
-      ] }),
-      open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: node.steps.map(renderStep) })
-    ] }, node.key);
-  };
-  const renderLegend = () => {
-    const items = [
-      { dot: "var(--dsw-alias-state-success-primary)", term: t("cacheHitLabel"), txt: t("legCacheHit") },
-      { dot: "var(--dsw-alias-brand-primary)", term: t("cacheMissLabel"), txt: t("legCacheMiss") },
-      { dot: "var(--dsw-alias-state-success-primary)", term: t("effEffective"), txt: t("legEffective") },
-      { dot: "var(--dsw-alias-state-warn-primary)", term: t("effRedundant"), txt: t("legRedundant") },
-      { dot: "var(--dsw-alias-state-warn-primary)", term: t("effStale"), txt: t("legStale") },
-      { dot: "transparent", dash: true, term: t("effInjected"), txt: t("legInjected") },
-      { dot: "#9b59b6", term: t("replace"), txt: t("legReplace") },
-      { dot: "#e74c3c", term: t("delete"), txt: t("legDelete") },
-      { dot: "#e67e22", term: `${t("markStale")} / ${t("markEffective")}`, txt: t("legMark") }
-    ];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-wrap", onMouseEnter: () => setLegendHover(true), onMouseLeave: () => setLegendHover(false), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", children: t("legend") }),
-      legendHover && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-pop", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", { children: t("legTitle") }),
-        items.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-legend-row", children: [
-          it.dot && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-dot", style: it.dash ? { background: "transparent", border: "1px dashed var(--dsw-alias-border-l2)" } : { background: it.dot } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: it.term }),
-            " \u2014 ",
-            it.txt
-          ] })
-        ] }, i))
-      ] })
-    ] });
-  };
-  const recoveredSegments = (0, import_react.useMemo)(() => state ? recoverTurns(state.segments) : [], [state]);
-  const nodes = (0, import_react.useMemo)(() => state ? groupNodes(recoveredSegments) : [], [state, recoveredSegments]);
-  const sum = state?.summary;
+  const askConfirm = (0, import_react2.useCallback)((name, args) => setConfirmOp({ name, args }), []);
+  const execOp = (0, import_react2.useCallback)((name, args) => {
+    if (name === "replace") void run(() => replace(args.segmentId, args.content));
+    else if (name === "delete") void run(() => deleteSegment(args.segmentId));
+    else if (name === "rollback") void run(() => rollback(args.turnIndex));
+    else if (name === "restore") void run(() => restore(args.snapshotId));
+    else if (name === "reset") void run(reset);
+    else if (name === "undo") void run(undo);
+    else if (name === "override") void run(() => override(args.segmentId, args.value));
+    else if (name === "setRealtime") void run(() => setRealtime(true));
+  }, [run, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime]);
+  const recoveredSegments = (0, import_react2.useMemo)(() => state ? recoverTurns(state.segments) : [], [state]);
+  const nodes = (0, import_react2.useMemo)(() => state ? groupNodes(recoveredSegments) : [], [state, recoveredSegments]);
   const totalPages = Math.max(1, Math.ceil(nodes.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageNodes = nodes.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-  const confirmInfo = confirmOp ? opInfo(confirmOp.name) : null;
-  if (loading && !state) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-empty", children: t("loading") }) });
-  if (error51 && !state) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice error", children: [
+  if (loading && !state) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-empty", children: t("loading") }) });
+  if (error51 && !state) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-notice error", children: [
     t("loadFailed"),
     "\uFF1A",
     error51
   ] }) });
-  if (!state) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-empty", children: t("noSession") }) });
+  if (!state) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-empty", children: t("noSession") }) });
+  const sh = {
+    t,
+    lang,
+    busy,
+    state,
+    isOpen: expansion.isOpen,
+    toggle: expansion.toggle,
+    explainHover,
+    setExplainHover,
+    legendHover,
+    setLegendHover,
+    editing,
+    setEditing,
+    askConfirm
+  };
   if (minimized) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-minbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setMinimized(false), children: "\u25B4 " + t("expandView") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-hint", children: `Context \xB7 ${t("totalTokens")} ${fmtNum(sum?.inputTokens)} \xB7 ${t("cacheHit")} ${fmtNum(sum?.cachedTokens)}` }),
-      renderLegend(),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setLang(lang === "en" ? "zh" : "en"), children: t("lang") })
-    ] }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(MinBar, { sh, onExpand: () => setMinimized(false), onToggleLang: () => setLang(lang === "en" ? "zh" : "en") });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-wrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-sticky", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-summary", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "k", children: t("totalTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "v", children: fmtNum(sum?.inputTokens) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "k", children: t("cacheHit") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "v", children: fmtNum(sum?.cachedTokens) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "k", children: t("outputTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "v", children: fmtNum(sum?.outputTokens) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "k", children: t("reasoningTokens") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "v", children: fmtNum(sum?.reasoningTokens) })
-      ] }),
-      sum?.model && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-kpi", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "k", children: t("model") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "v", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("small", { children: sum.model.provider + " \xB7 " + sum.model.model }) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: `ctm-btn ${state.realtime ? "realtime-on" : ""}`, title: t("realtimeTip"), onClick: () => {
+  const sum = state.summary;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-wrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Toolbar, { sh, h: {
+      onRefresh: () => void load(),
+      onToggleRealtime: () => {
         if (state.realtime) void run(() => setRealtime(false));
         else askConfirm("setRealtime", { enabled: true });
-      }, children: `${t("realtime")}: ${state.realtime ? t("realtimeOn") : t("realtimeOff")}` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn primary", title: t("refreshTip"), onClick: () => void load(), children: t("refresh") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", title: t("resetTip"), onClick: () => askConfirm("reset", {}), children: t("reset") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", title: t("snapshotsTip"), onClick: () => setShowSnap((v) => !v), children: `${t("snapshots")}(${state.snapshots.length})` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", title: t("trashTip"), onClick: () => setShowTrash((v) => !v), children: `${t("trash")}(${state.trash.length})` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setMinimized(true), children: "\u25BE " + t("minimize") }),
-      renderLegend(),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setLang(lang === "en" ? "zh" : "en"), children: t("lang") })
-    ] }) }),
-    state.notice && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `ctm-notice ${state.notice.kind || "ok"}`, children: noticeText(state.notice) }),
-    (state.interceptError ?? null) !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice warn", children: [
+      },
+      onReset: () => askConfirm("reset", {}),
+      onToggleSnapshots: () => setShowSnap((v) => !v),
+      onToggleTrash: () => setShowTrash((v) => !v),
+      onMinimize: () => setMinimized(true),
+      onToggleLang: () => setLang(lang === "en" ? "zh" : "en")
+    } }),
+    state.notice && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: `ctm-notice ${state.notice.kind || "ok"}`, children: noticeText(state.notice, t) }),
+    (state.interceptError ?? null) !== null && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-notice warn", children: [
       t("interceptFailed"),
       "\uFF1A",
       state.interceptError
     ] }),
-    (state.applyError ?? null) !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice error", children: [
+    (state.applyError ?? null) !== null && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-notice error", children: [
       t("applyFailed"),
       "\uFF1A",
       state.applyError
     ] }),
-    error51 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice error", children: [
+    error51 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-notice error", children: [
       t("opFailed"),
       "\uFF1A",
       error51
     ] }),
-    showSnap && state.snapshots.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-section-title", children: `${t("snapshots")}\uFF08HEAD\uFF1A${state.head}\uFF09` }),
-      state.snapshots.map((s) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-actions", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-hint", children: `${s.label} \xB7 ${s.segmentCount} \xB7 ${fmtTime(s.createdAt)}` }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => askConfirm("restore", { snapshotId: s.id }), children: t("restore") })
+    showSnap && state.snapshots.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-section-title", children: `${t("snapshots")}\uFF08HEAD\uFF1A${state.head}\uFF09` }),
+      state.snapshots.map((s) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "ctm-actions", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "ctm-hint", children: `${s.label} \xB7 ${s.segmentCount} \xB7 ${fmtTime(s.createdAt)}` }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: busy, onClick: () => askConfirm("restore", { snapshotId: s.id }), children: t("restore") })
       ] }, s.id))
     ] }),
-    showTrash && state.trash.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-section-title", children: t("trash") }),
-      state.trash.map((tt) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-hint", children: `#${tt.turn_index} \xB7 ${roleLabel(tt.role)} \xB7 ${(tt.content || "").slice(0, 60)}` }, tt.id)),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => askConfirm("undo", {}), children: t("undo") })
+    showTrash && state.trash.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-section-title", children: t("trash") }),
+      state.trash.map((tt) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-hint", children: `#${tt.turn_index} \xB7 ${roleLabel(t, tt.role)} \xB7 ${(tt.content || "").slice(0, 60)}` }, tt.id)),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", disabled: busy, onClick: () => askConfirm("undo", {}), children: t("undo") })
     ] }),
-    totalPages > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-pager", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: safePage === 0, onClick: () => setPage((p) => Math.max(0, p - 1)), children: t("prevPage") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-hint", children: `${t("page")} ${safePage + 1} ${t("of")} ${totalPages}` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: safePage >= totalPages - 1, onClick: () => setPage((p) => Math.min(totalPages - 1, p + 1)), children: t("nextPage") })
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Pager, { sh, page: safePage, totalPages, onPage: setPage }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-flow", children: pageNodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(TurnNode, { node, sh }, node.key)) }),
+    (sum.rolledBackCount ?? 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "ctm-section-title", children: `${t("rolledBackSection")}\uFF08${sum.rolledBackCount}\uFF09` }),
+      showRolledBack ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { children: recoveredSegments.filter((s) => s.rolledBack).map((seg) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SegmentCard, { seg, sh }, seg.id)) }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: "ctm-btn subtle", onClick: () => setShowRolledBack(true), children: t("showRolledBack") })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-flow", children: pageNodes.map(renderNode) }),
-    (sum?.rolledBackCount ?? 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-section-title", children: `${t("rolledBackSection")}\uFF08${sum?.rolledBackCount}\uFF09` }),
-      showRolledBack ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: recoveredSegments.filter((s) => s.rolledBack).map(renderSegment) }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setShowRolledBack(true), children: t("showRolledBack") })
-    ] }),
-    editing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-editor", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-node-title", children: `${t("replace")} \xB7 ${editing.role} #${editing.turnIndex}` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", { className: "ctm-textarea", value: editing.text, onChange: (e) => setEditing({ ...editing, text: e.target.value }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-actions", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn primary", disabled: busy, onClick: () => askConfirm("replace", { segmentId: editing.id, content: editing.text }), children: t("save") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => setEditing(null), children: t("cancel") })
-      ] })
-    ] }),
-    confirmOp && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-modal-overlay", onClick: () => setConfirmOp(null), children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-modal", onClick: (e) => e.stopPropagation(), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ctm-node-title", children: `${t("confirmTitle")}\uFF1A${confirmInfo?.title ?? ""}` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-modal-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: t("impact") }),
-        confirmInfo?.impact ?? ""
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-modal-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: t("risk") }),
-        confirmInfo?.risk ?? ""
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-actions", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn danger", disabled: busy, onClick: () => {
-          const op = confirmOp;
-          setConfirmOp(null);
-          const fn = op.name;
-          if (fn === "replace") void run(() => replace(op.args.segmentId, op.args.content));
-          else if (fn === "delete") void run(() => deleteSegment(op.args.segmentId));
-          else if (fn === "rollback") void run(() => rollback(op.args.turnIndex));
-          else if (fn === "restore") void run(() => restore(op.args.snapshotId));
-          else if (fn === "reset") void run(reset);
-          else if (fn === "undo") void run(undo);
-          else if (fn === "override") void run(() => override(op.args.segmentId, op.args.value));
-          else if (fn === "setRealtime") void run(() => setRealtime(true));
-        }, children: t("confirm") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", onClick: () => setConfirmOp(null), children: t("cancel") })
-      ] })
-    ] }) })
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Editor, { sh }),
+    confirmOp && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ConfirmModal, { sh, op: confirmOp, onClose: () => setConfirmOp(null), onExec: execOp })
   ] });
 }
 
@@ -15567,7 +15679,8 @@ var ctmSegmentSchema = external_exports.object({
 });
 var ctmNoticeSchema = external_exports.object({
   kind: external_exports.enum(["ok", "warn", "error"]),
-  text: external_exports.string()
+  code: external_exports.string(),
+  params: external_exports.record(external_exports.string(), external_exports.union([external_exports.string(), external_exports.number()])).optional()
 });
 var ctmSummarySchema = external_exports.object({
   inputTokens: external_exports.number().nullable(),
