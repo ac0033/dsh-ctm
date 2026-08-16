@@ -2,14 +2,20 @@
  * Context Transparency Manager — host half.
  *
  * Self-contained dsh bundle plugin: a single `POST /ctm` JSON route (registered
- * through the host `webServer`) plus a host-plane `llm/stream` interceptor. The
- * route reads the live model surface (`sessionQuery.readSurface`) plus the
- * assembled system prompt (`session.requestHeader()`, with a `readSession()`
- * fallback for historical sessions), prices it with `tokenMeter`, keeps a
- * per-session editable store, and applies edits to the model's actual input
- * only while "realtime" is enabled for that session.
- * Requests are validated against the shared contract; every response is a full
- * `CtmState`. No Typert / @Remote coupling.
+ * through the host `webServer`) plus two waterfall listeners. The route reads
+ * the live model surface (`sessionQuery.readSurface`) plus the assembled
+ * system prompt (`session.requestHeader()`, with a `readSession()` fallback
+ * for historical sessions), prices it with `tokenMeter`, and keeps a
+ * per-session editable store.
+ *
+ * Real edits never rewrite an in-flight request: they are queued per session
+ * and logged as surface `replace` events inside the `agent/pre-step`
+ * waterfall (the same timing automatic compaction uses), which satisfies
+ * DSH's "model-visible ⟺ logged" invariant — replay, fork, and token
+ * accounting then derive the edited history automatically. System-prompt
+ * edits ride the `system-prompt/assemble` waterfall as a section override.
+ * Requests are validated against the shared contract; every response is a
+ * full `CtmState`. No Typert / @Remote coupling.
  */
 import {
   ctmRequestSchema,
@@ -19,12 +25,29 @@ import {
   type CtmSegment,
   type CtmState,
 } from './contract'
+import { BIGRAM_CACHE_CAP, createBigramCache, jaccardSimilarity } from './bigrams'
+import {
+  EditPlanError,
+  applyEditGroup,
+  planEdit,
+  planUndo,
+  type AppendCapable,
+  type AppliedEdit,
+  type EditGroup,
+  type EditPlanErrorCode,
+  type QueuedEdit,
+  type SessionLike,
+} from './surface-edits'
 
 export const name = 'ctm'
-export const inject = ['sessionQuery', 'sessions', 'tokenMeter', 'llm']
+export const inject = ['sessionQuery', 'sessions', 'tokenMeter']
 
 const TOOL_RESULT_PREVIEW = 2000
 const CONTENT_CAP = 40000
+/** LRU bounds for per-session memory: stores, snapshots per session, trash entries per session. */
+const MAX_SESSION_STORES = 50
+const MAX_SNAPSHOTS_PER_SESSION = 20
+const MAX_TRASH_PER_SESSION = 50
 
 interface CtmStore {
   base: CtmSegment[] | null
@@ -40,18 +63,35 @@ interface CtmStore {
   version: number
   usage: Record<string, number> | null
   model: { provider: string; model: string } | null
-  lastInterceptError: string | null
+  /** Edits waiting to be logged as surface replace events at the next agent/pre-step. */
+  queue: EditGroup[]
+  /** Logged edits that a later undo can still reverse with a counter-replace. */
+  appliedEdits: AppliedEdit[]
+  /** Pending system-prompt override, applied by the system-prompt/assemble waterfall. */
+  systemOverride: string | null
+  systemOverridePending: boolean
+  lastApplyError: string | null
 }
 
 function storeFor(map: Map<string, CtmStore>, sessionId: string): CtmStore {
-  let s = map.get(sessionId)
-  if (!s) {
-    s = {
-      base: null, lastBase: [], edits: new Map(), deleted: new Set(), trash: [],
-      undoStack: null, overrides: new Map(), rolledBack: new Set(), snapshots: [],
-      head: 'live', version: 0, usage: null, model: null, lastInterceptError: null,
-    }
-    map.set(sessionId, s)
+  const existing = map.get(sessionId)
+  if (existing) {
+    // LRU touch: re-insert so the eviction below drops the coldest session.
+    map.delete(sessionId)
+    map.set(sessionId, existing)
+    return existing
+  }
+  const s: CtmStore = {
+    base: null, lastBase: [], edits: new Map(), deleted: new Set(), trash: [],
+    undoStack: null, overrides: new Map(), rolledBack: new Set(), snapshots: [],
+    head: 'live', version: 0, usage: null, model: null,
+    queue: [], appliedEdits: [], systemOverride: null, systemOverridePending: false,
+    lastApplyError: null,
+  }
+  map.set(sessionId, s)
+  if (map.size > MAX_SESSION_STORES) {
+    const oldest = map.keys().next()
+    if (!oldest.done) map.delete(oldest.value)
   }
   return s
 }
@@ -87,15 +127,8 @@ function blockInnerText(b: unknown): string {
   return ''
 }
 
-interface CtmWireBlock { type?: string; text?: string; id?: string; toolCallId?: string }
-interface CtmWireMessage { id?: string; role?: string; content?: CtmWireBlock[] }
-
-function isTextOnly(m: CtmWireMessage | undefined): boolean {
-  const c = m?.content
-  if (!Array.isArray(c) || c.length === 0) return false
-  for (const b of c) if (b && b.type !== 'text' && b.type !== 'reasoning') return false
-  return true
-}
+/** Shared bigram cache for the effectiveness engine (see bigrams.ts). */
+const bigramCache = createBigramCache(BIGRAM_CACHE_CAP)
 
 /**
  * Auto effectiveness verdicts, priority order: system-injected → manual
@@ -123,16 +156,12 @@ export function computeEffectiveness(segments: CtmSegment[], overrides: Map<stri
       if (i >= n - 6) { eff = 'effective'; reason = 'recent_tool' }
       else {
         let maxSim = 0
+        const a = bigramCache.get(seg.content || '')
         for (let j = 0; j < n; j++) {
           if (j === i) continue
           const other = segments[j]
           if (other === undefined || other.source === 'system_inject') continue
-          const a = new Set<string>(); const b = new Set<string>()
-          const sa = seg.content || ''; const sb = other.content || ''
-          for (let k = 0; k < sa.length - 1; k++) a.add(sa.slice(k, k + 2))
-          for (let k = 0; k < sb.length - 1; k++) b.add(sb.slice(k, k + 2))
-          let inter = 0; for (const x of a) if (b.has(x)) inter++
-          const sim = a.size + b.size === 0 ? 0 : inter / (a.size + b.size - inter)
+          const sim = jaccardSimilarity(a, bigramCache.get(other.content || ''))
           if (sim > maxSim) maxSim = sim
         }
         if (maxSim > 0.92) { eff = 'redundant'; reason = 'similar' }
@@ -148,7 +177,22 @@ export function computeEffectiveness(segments: CtmSegment[], overrides: Map<stri
 export function apply(ctx: any): void {
   const stores = new Map<string, CtmStore>()
   const realtimeSessions = new Set<string>()
-  let applying = false
+  let groupCounter = 0
+
+  const logger: { warn: (...args: unknown[]) => void } = (() => {
+    try { return (ctx.logger?.('ctm') ?? console) as { warn: (...args: unknown[]) => void } } catch { return console }
+  })()
+
+  function liveSession(sessionId: string): (SessionLike & AppendCapable & { requestHeader?: () => { system?: string } | undefined }) | undefined {
+    return (ctx.sessions as { get?: (id: string) => unknown } | undefined)?.get?.(sessionId) as
+      | (SessionLike & AppendCapable & { requestHeader?: () => { system?: string } | undefined })
+      | undefined
+  }
+
+  function newGroupId(): string {
+    groupCounter++
+    return 'edit-' + Date.now() + '-' + groupCounter
+  }
 
   function segmentFromEvent(ev: Record<string, unknown>, index: number, nodeTokens: Map<number, number>): CtmSegment {
     const d = (ev.data || {}) as Record<string, unknown>
@@ -208,7 +252,7 @@ export function apply(ctx: any): void {
     const sq = ctx.sessionQuery as { readSurface?: (id: string) => Promise<{ events?: Record<string, unknown>[] }> } | undefined
     const events = (await sq?.readSurface?.(sessionId))?.events ?? []
     const nodeTokens = new Map<number, number>()
-    const live = (ctx.sessions as { get?: (id: string) => unknown } | undefined)?.get?.(sessionId)
+    const live = liveSession(sessionId)
     let systemText: string | null = null
     if (live !== undefined) {
       try {
@@ -222,7 +266,7 @@ export function apply(ctx: any): void {
         // there instead of re-scanning the raw log. This is the "segment 0" the
         // Trajectory view shows as "Initial System Prompt" via its request/header
         // definition, and which readSurface() alone cannot see.
-        const header = (live as { requestHeader?: () => { system?: string } | undefined }).requestHeader?.()
+        const header = live.requestHeader?.()
         if (typeof header?.system === 'string' && header.system.length > 0) systemText = header.system
       } catch { /* ignore */ }
     }
@@ -318,10 +362,22 @@ export function apply(ctx: any): void {
     return out
   }
 
+  /** Segment ids a queued (not yet logged) group currently drives, for the "pending" badge. */
+  function pendingIds(st: CtmStore): Set<string> {
+    const ids = new Set<string>()
+    for (const group of st.queue) for (const id of group.segmentIds) ids.add(id)
+    return ids
+  }
+
   function compute(sessionId: string, st: CtmStore, notice: CtmNotice | null): CtmState {
     const base = st.base ?? st.lastBase
     const segments = applyMutations(base, st)
     computeEffectiveness(segments, st.overrides)
+    const pending = pendingIds(st)
+    for (const seg of segments) {
+      if (pending.has(seg.id)) seg.pending = true
+      if (seg.id === 'seg-system' && st.systemOverridePending) seg.pending = true
+    }
     const cacheTokens = st.usage?.cacheReadTokens ?? 0
     let cum = 0
     let broken = false
@@ -349,7 +405,8 @@ export function apply(ctx: any): void {
       },
       snapshots: st.snapshots.map(s => ({ id: s.id, createdAt: s.createdAt, label: s.label, segmentCount: s.segments.length })),
       trash: st.trash, notice,
-      interceptError: st.lastInterceptError,
+      interceptError: null,
+      applyError: st.lastApplyError,
     }
   }
 
@@ -357,7 +414,9 @@ export function apply(ctx: any): void {
     const st = storeFor(stores, sessionId)
     // Re-read the live surface on every request while in "live" mode; only a
     // restored snapshot (st.base !== null) pins the base. This keeps the view
-    // fresh as the session grows instead of freezing at the first read.
+    // fresh as the session grows instead of freezing at the first read — and
+    // makes logged edits show up on their own, because readSurface returns the
+    // post-replacement surface.
     if (st.base === null) {
       const info = await readBase(sessionId)
       st.lastBase = info.segments
@@ -380,22 +439,140 @@ export function apply(ctx: any): void {
     return best
   }
 
+  function eventBySeq(session: SessionLike, seq: number): { type: string; data: any } | undefined {
+    const direct = session.events[seq]
+    if (direct !== undefined && direct.seq === seq) return direct
+    return session.events.find(e => e.seq === seq)
+  }
+
+  /** The message source a replacement user/message should keep so the node keeps its classification. */
+  function replacementSource(session: SessionLike, seg: CtmSegment): unknown {
+    // Assistant revision by role demotion: the model sees the revised text as
+    // a plain user message (assistant/message replacement is rejected by the
+    // session invariant, whose turn/step must match the open one).
+    if (seg.role === 'assistant') return { kind: 'user' }
+    const source = eventBySeq(session, seg.seq)?.data?.source
+    try { return source === undefined ? { kind: 'user' } : structuredClone(source) } catch { return { kind: 'user' } }
+  }
+
+  function planErrorNotice(code: EditPlanErrorCode): string {
+    switch (code) {
+      case 'target_not_on_surface': return 'segment_gone'
+      case 'unbalanced': return 'unbalanced_edit'
+      case 'not_tool_result': return 'tool_result_changed'
+      case 'not_user_message': return 'segment_gone'
+      case 'empty_range': return 'nothing_to_delete'
+    }
+  }
+
+  /** Drop the in-memory view mutations a group drove (after flush, or when the group is dequeued). */
+  function releaseViewMutations(st: CtmStore, group: EditGroup): void {
+    for (const id of group.segmentIds) {
+      st.edits.delete(id)
+      if (st.deleted.delete(id)) st.trash = st.trash.filter(t => t.id !== id)
+      st.rolledBack.delete(id)
+    }
+  }
+
+  /**
+   * Flush the queued edits of one session into the log. Runs inside the
+   * agent/pre-step waterfall (turn open, request not yet built), so tool-result
+   * rewrites satisfy the open-turn invariant and every edit lands in the very
+   * next request. Failures are contained per group: the view mutation is
+   * released (the edit did not happen) and the error surfaces in the state.
+   */
+  function flushQueuedEdits(session: SessionLike & AppendCapable, st: CtmStore): void {
+    const groups = st.queue
+    st.queue = []
+    for (const group of groups) {
+      try {
+        const applied = applyEditGroup(session, group)
+        if (applied !== null && applied.undoable) st.appliedEdits.push(applied)
+        st.lastApplyError = null
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg)
+        st.lastApplyError = msg
+      } finally {
+        releaseViewMutations(st, group)
+      }
+    }
+  }
+
+  /** Enqueue one validated edit group; returns the error notice text when planning rejects it. */
+  function enqueue(st: CtmStore, session: SessionLike, kind: EditGroup['kind'], undoable: boolean, edit: QueuedEdit, segmentIds: string[]): string | null {
+    try {
+      planEdit(session, edit) // validation only; the plan is recomputed at flush time
+    } catch (e) {
+      if (e instanceof EditPlanError) return planErrorNotice(e.code)
+      throw e
+    }
+    st.queue.push({ id: newGroupId(), kind, undoable, edits: [edit], segmentIds })
+    return null
+  }
+
+  /** Enqueue every pending view mutation when realtime is switched on. Returns how many groups were queued. */
+  function enqueueViewMutations(sessionId: string, st: CtmStore, cur: CtmSegment[]): number {
+    const session = liveSession(sessionId)
+    if (session === undefined) return 0
+    let count = 0
+    for (const [id, content] of st.edits) {
+      if (id === 'seg-system') continue
+      const seg = findSeg(cur, id)
+      if (!seg) continue
+      const edit: QueuedEdit = seg.role === 'tool'
+        ? { kind: 'replace-tool', seq: seg.seq, text: content }
+        : { kind: 'replace-user', seq: seg.seq, text: content, source: replacementSource(session, seg) }
+      if (enqueue(st, session, 'replace', seg.role !== 'assistant', edit, [id]) === null) count++
+    }
+    for (const id of st.deleted) {
+      const seg = findSeg(cur, id)
+      if (!seg || seg.seq < 0) continue
+      const edit: QueuedEdit = { kind: 'delete', seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` }
+      if (enqueue(st, session, 'delete', eventBySeq(session, seg.seq)?.type === 'user/message', edit, [id]) === null) count++
+    }
+    if (st.rolledBack.size > 0) {
+      let startSeq = -1
+      for (const s of cur) if (st.rolledBack.has(s.id) && s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq
+      if (startSeq >= 0) {
+        const edit: QueuedEdit = { kind: 'rollback', startSeq, marker: '[CTM] The conversation was rolled back by the user.' }
+        if (enqueue(st, session, 'rollback', false, edit, [...st.rolledBack]) === null) count++
+      }
+    }
+    return count
+  }
+
   function dispatch(request: CtmRequest, st: CtmStore, cur: CtmSegment[]): CtmNotice | null {
     switch (request.op) {
       case 'getState': return null
       case 'replace': {
         const seg = findSeg(cur, request.segmentId)
         if (!seg) return { kind: 'error', text: 'segment_not_found' }
-        // System-injected segments are view-only: the UI never offered replace
-        // for them, and the realtime interceptor cannot rewrite options.system
-        // anyway — so editing them was a silent no-op. Reject until edits move
-        // to logged surface-replacement events.
-        if (seg.source === 'system_inject') return { kind: 'error', text: 'cannot_replace_system' }
-        if (seg.source === 'tool_call' || seg.role === 'tool') return { kind: 'error', text: 'tool_readonly' }
-        st.edits.set(seg.id, String(request.content ?? ''))
+        const content = String(request.content ?? '')
+        // The initial system prompt is not a surface event: the edit is stored
+        // as an override that the system-prompt/assemble waterfall swaps in for
+        // the section list. `{{` is rejected because the render pass would
+        // treat it as a variable reference and fail the whole request.
+        if (seg.id === 'seg-system') {
+          if (content.includes('{{')) return { kind: 'error', text: 'invalid_template' }
+          st.systemOverride = content
+          st.systemOverridePending = realtimeSessions.has(request.sessionId)
+          st.edits.set(seg.id, content)
+          return { kind: 'ok', text: 'replaced_system' }
+        }
+        st.edits.set(seg.id, content)
         let idx = -1
         for (let i = 0; i < cur.length; i++) if (cur[i]?.id === seg.id) { idx = i; break }
-        return { kind: 'ok', text: 'replaced_' + Math.max(0, cur.length - idx - 1) }
+        const later = Math.max(0, cur.length - idx - 1)
+        if (!realtimeSessions.has(request.sessionId)) return { kind: 'ok', text: 'replaced_' + later }
+        const session = liveSession(request.sessionId)
+        if (session === undefined) return { kind: 'warn', text: 'session_not_live' }
+        const edit: QueuedEdit = seg.role === 'tool'
+          ? { kind: 'replace-tool', seq: seg.seq, text: content }
+          : { kind: 'replace-user', seq: seg.seq, text: content, source: replacementSource(session, seg) }
+        const error = enqueue(st, session, 'replace', seg.role !== 'assistant', edit, [seg.id])
+        if (error !== null) { st.edits.delete(seg.id); return { kind: 'error', text: error } }
+        return { kind: 'ok', text: 'replaced_queued_' + later }
       }
       case 'delete': {
         const seg = findSeg(cur, request.segmentId)
@@ -405,19 +582,48 @@ export function apply(ctx: any): void {
         if (cuser && seg.id === cuser.id) return { kind: 'error', text: 'cannot_delete_current_user' }
         if (st.deleted.has(seg.id)) return { kind: 'ok', text: 'deleted_0' }
         const c = cloneSegment(seg); c.deleted = true
-        st.trash = st.trash.concat(c)
+        st.trash = st.trash.concat(c).slice(-MAX_TRASH_PER_SESSION)
         st.deleted.add(seg.id)
-        st.undoStack = { ids: [seg.id] }
-        return { kind: 'ok', text: 'deleted_1' }
+        if (!realtimeSessions.has(request.sessionId)) { st.undoStack = { ids: [seg.id] }; return { kind: 'ok', text: 'deleted_1' } }
+        const session = liveSession(request.sessionId)
+        if (session === undefined) { st.undoStack = { ids: [seg.id] }; return { kind: 'warn', text: 'session_not_live' } }
+        const edit: QueuedEdit = { kind: 'delete', seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` }
+        // Only a deleted user/message can be faithfully re-appended by undo;
+        // other roles would come back with the wrong role.
+        const error = enqueue(st, session, 'delete', eventBySeq(session, seg.seq)?.type === 'user/message', edit, [seg.id])
+        if (error !== null) {
+          st.deleted.delete(seg.id)
+          st.trash = st.trash.filter(t => t.id !== seg.id)
+          return { kind: 'error', text: error }
+        }
+        st.undoStack = null
+        return { kind: 'ok', text: 'deleted_queued' }
       }
       case 'rollback': {
         const t = request.turnIndex
         if (typeof t !== 'number' || t < 0) return { kind: 'error', text: 'invalid_turn' }
         st.snapshots.push({ id: 'snap-' + Date.now() + '-' + Math.floor(Math.random() * 10000), createdAt: Date.now(), label: 'rollback_to_' + t, segments: cur.map(cloneSegment) })
+        if (st.snapshots.length > MAX_SNAPSHOTS_PER_SESSION) st.snapshots.shift()
         st.head = st.snapshots[st.snapshots.length - 1]!.id
+        const previous = new Set(st.rolledBack)
         st.rolledBack.clear()
         let count = 0
-        for (const s of cur) if (s.turn_index > t) { st.rolledBack.add(s.id); count++ }
+        let startSeq = -1
+        for (const s of cur) {
+          if (s.turn_index > t) {
+            st.rolledBack.add(s.id)
+            count++
+            if (s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq
+          }
+        }
+        if (realtimeSessions.has(request.sessionId) && count > 0 && startSeq >= 0) {
+          const session = liveSession(request.sessionId)
+          if (session === undefined) return { kind: 'warn', text: 'session_not_live' }
+          const edit: QueuedEdit = { kind: 'rollback', startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` }
+          const error = enqueue(st, session, 'rollback', false, edit, [...st.rolledBack])
+          if (error !== null) { st.rolledBack = previous; return { kind: 'error', text: error } }
+          return { kind: 'ok', text: 'rollback_queued_' + count }
+        }
         return { kind: 'ok', text: 'rolled_back_' + count }
       }
       case 'restore': {
@@ -430,13 +636,54 @@ export function apply(ctx: any): void {
       case 'reset':
         st.base = null; st.edits.clear(); st.deleted.clear(); st.trash = []; st.undoStack = null
         st.overrides.clear(); st.rolledBack.clear(); st.snapshots = []; st.head = 'live'
+        st.queue = []; st.appliedEdits = []; st.systemOverride = null; st.systemOverridePending = false
+        st.lastApplyError = null
         return { kind: 'ok', text: 'reset' }
       case 'undo': {
-        if (!st.undoStack || !st.undoStack.ids.length) return { kind: 'warn', text: 'nothing_to_undo' }
-        for (const id of st.undoStack.ids) st.deleted.delete(id)
-        st.trash = st.trash.filter(t => !st.undoStack!.ids.includes(t.id))
-        st.undoStack = null
-        return { kind: 'ok', text: 'undone' }
+        // Undo only the most recent operation, at three depths: a queued
+        // (not yet logged) group is simply dequeued; a view-only delete is
+        // reverted in memory; an already-logged edit is reversed by queueing
+        // a counter-replace with the original content from the immutable log.
+        const queued = st.queue[st.queue.length - 1]
+        if (queued) {
+          st.queue.pop()
+          releaseViewMutations(st, queued)
+          return { kind: 'ok', text: 'undone_queued' }
+        }
+        if (st.undoStack && st.undoStack.ids.length) {
+          for (const id of st.undoStack.ids) st.deleted.delete(id)
+          st.trash = st.trash.filter(t => !st.undoStack!.ids.includes(t.id))
+          st.undoStack = null
+          return { kind: 'ok', text: 'undone' }
+        }
+        const applied = st.appliedEdits[st.appliedEdits.length - 1]
+        if (applied) {
+          const session = liveSession(request.sessionId)
+          if (session === undefined) return { kind: 'warn', text: 'undo_unavailable' }
+          try {
+            planUndo(session, applied) // validation only; replanned at flush time
+          } catch (e) {
+            if (e instanceof EditPlanError) return { kind: 'warn', text: 'undo_unavailable' }
+            throw e
+          }
+          st.appliedEdits.pop()
+          const original = eventBySeq(session, applied.originalSeq)
+          const originalData = original?.data
+          let originalText: string
+          if (applied.kind === 'replace-tool') {
+            originalText = blockInnerText(originalData?.message?.content?.[0]?.content)
+          } else {
+            // user/message data carries the blocks at the top level; join the
+            // text of every block so the queued undo previews the original.
+            const blocks = (originalData?.content ?? originalData?.message?.content) as unknown
+            originalText = Array.isArray(blocks) ? blocks.map(blockInnerText).filter(Boolean).join('\n') : blockInnerText(blocks ?? null)
+          }
+          const replacementId = 'seg-' + applied.replacementSeq
+          st.queue.push({ id: newGroupId(), kind: 'undo', undoable: false, edits: [{ kind: 'undo', applied }], segmentIds: [replacementId] })
+          if (originalText) st.edits.set(replacementId, originalText)
+          return { kind: 'ok', text: 'undone_queued' }
+        }
+        return { kind: 'warn', text: 'nothing_to_undo' }
       }
       case 'override': {
         const seg = findSeg(cur, request.segmentId)
@@ -447,78 +694,58 @@ export function apply(ctx: any): void {
         return { kind: 'ok', text: 'override_' + request.value }
       }
       case 'setRealtime':
-        if (request.enabled) realtimeSessions.add(request.sessionId)
-        else realtimeSessions.delete(request.sessionId)
-        return request.enabled ? { kind: 'ok', text: 'realtime_on' } : { kind: 'ok', text: 'realtime_off' }
+        if (request.enabled) {
+          realtimeSessions.add(request.sessionId)
+          // Switching on means "apply for real": every pending view mutation is
+          // queued for the next agent/pre-step, and a stored system-prompt
+          // override goes live at the next assembly.
+          if (st.systemOverride !== null) st.systemOverridePending = true
+          const queuedCount = enqueueViewMutations(request.sessionId, st, cur)
+          return queuedCount > 0
+            ? { kind: 'ok', text: 'realtime_on_queued_' + queuedCount }
+            : { kind: 'ok', text: 'realtime_on' }
+        }
+        realtimeSessions.delete(request.sessionId)
+        return { kind: 'ok', text: 'realtime_off' }
       default: return { kind: 'error', text: 'unknown_op' }
     }
   }
 
-  const logger: { warn: (...args: unknown[]) => void } = (() => {
-    try { return (ctx.logger?.('ctm') ?? console) as { warn: (...args: unknown[]) => void } } catch { return console }
-  })()
-
-  function intercept(options: any, next: () => any): any {
-    const sid = options?.sessionId as string | undefined
+  // Timing layer: queued edits land in the log at the step boundary, the same
+  // moment automatic compaction appends its replace events. The turn is open
+  // (tool-result rewrites are legal), the request is not yet built (the edits
+  // take effect in this very step), and nothing interleaves with streaming.
+  ctx.on('agent/pre-step', (payload: any, next: () => unknown) => {
     try {
-      if (!sid || applying || !realtimeSessions.has(sid)) return next()
-      const st = stores.get(sid)
-      if (!st) return next()
-      const excludeIds = new Set<string>()
-      const editMap = new Map<string, string>()
-      const deletedResultCallIds = new Set<string>()
-      const deletedCallIds = new Set<string>()
-      for (const seg of st.lastBase) {
-        if (!seg.messageId) continue
-        if (st.deleted.has(seg.id) || st.rolledBack.has(seg.id)) {
-          excludeIds.add(seg.messageId)
-          if (seg.toolCallId) deletedResultCallIds.add(seg.toolCallId)
-          for (const tc of seg.toolCalls) if (tc.id) deletedCallIds.add(tc.id)
-        }
-        if (st.edits.has(seg.id)) editMap.set(seg.messageId, st.edits.get(seg.id)!)
-      }
-      if (!excludeIds.size && !editMap.size) return next()
-      const msgs = options?.messages as CtmWireMessage[] | undefined
-      if (!Array.isArray(msgs)) return next()
-      const out: CtmWireMessage[] = []
-      let changed = false
-      for (const m of msgs) {
-        if (m?.id && excludeIds.has(m.id)) { changed = true; continue }
-        let outMsg = m
-        if (deletedResultCallIds.size && outMsg?.role === 'assistant' && Array.isArray(outMsg.content)) {
-          const filtered = outMsg.content.filter(b => !(b && b.type === 'tool-call' && b.id !== undefined && deletedResultCallIds.has(b.id)))
-          if (filtered.length !== outMsg.content.length) { changed = true; outMsg = { ...outMsg, content: filtered } }
-        }
-        if (deletedCallIds.size && outMsg && Array.isArray(outMsg.content)) {
-          const orphan = outMsg.content.some(b => b && b.type === 'tool-result' && b.toolCallId !== undefined && deletedCallIds.has(b.toolCallId))
-          if (orphan) { changed = true; continue }
-        }
-        if (outMsg?.id && editMap.has(outMsg.id) && isTextOnly(outMsg)) {
-          changed = true
-          outMsg = { ...outMsg, content: [{ type: 'text', text: editMap.get(outMsg.id)! }] }
-        }
-        if (outMsg && Array.isArray(outMsg.content) && outMsg.content.length === 0) { changed = true; continue }
-        out.push(outMsg)
-      }
-      if (!changed) return next()
-      applying = true
-      try {
-        const result = ctx.llm.stream({ ...options, messages: out })
-        st.lastInterceptError = null
-        return result
-      } finally { applying = false }
+      const session = payload?.agent?.session
+      const sid = typeof session?.id === 'string' ? session.id : undefined
+      const st = sid === undefined ? undefined : stores.get(sid)
+      if (session !== undefined && st !== undefined && st.queue.length > 0) flushQueuedEdits(session, st)
     } catch (e) {
-      // A failed rewrite falls back to the unmodified request — but never
-      // silently: log it and surface it in the next state, so the user can see
-      // that "Apply for real" did not actually apply.
-      const msg = e instanceof Error ? e.message : String(e)
-      logger.warn('[ctm] realtime interception failed, sending the unmodified request instead:', msg)
-      if (sid) { const st = stores.get(sid); if (st) st.lastInterceptError = msg }
-      return next()
+      logger.warn('[ctm] failed to flush queued edits:', e instanceof Error ? e.message : String(e))
     }
-  }
+    return next()
+  })
 
-  ctx.on('llm/stream', (options: unknown, next: () => unknown) => intercept(options, next))
+  // System-prompt layer: a stored override replaces the assembled section list
+  // (the user edited the fully rendered prompt, so the override IS the whole
+  // section list). The loop logs a new request/header snapshot on its own when
+  // the rendered system text changes. Waterfall rules: always call next().
+  ctx.on('system-prompt/assemble', async (_assembly: any, context: any, next: () => Promise<any>) => {
+    const result = await next()
+    try {
+      const sid = context?.agent?.session?.id
+      if (typeof sid !== 'string' || !realtimeSessions.has(sid)) return result
+      const st = stores.get(sid)
+      if (st === undefined || st.systemOverride === null) return result
+      st.systemOverridePending = false
+      st.edits.delete('seg-system') // the next readBase picks the new text up from request/header
+      return { ...result, sections: [{ name: 'ctm:override', text: st.systemOverride }] }
+    } catch (e) {
+      logger.warn('[ctm] failed to apply the system-prompt override:', e instanceof Error ? e.message : String(e))
+      return result
+    }
+  })
 
   ctx.inject(['webServer'], (scope: any) => {
     // Return the route disposer so the framework removes /ctm on unload/HMR

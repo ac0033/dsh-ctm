@@ -160,7 +160,7 @@ var zh = {
   confirmTitle: "\u786E\u8BA4\u64CD\u4F5C",
   impact: "\u5F71\u54CD",
   risk: "\u98CE\u9669",
-  undo: "\u64A4\u9500\u4E0A\u6B21\u5220\u9664",
+  undo: "\u64A4\u9500\u6700\u8FD1\u64CD\u4F5C",
   restore: "\u5207\u6362\u5230\u6B64\u5FEB\u7167",
   rolledBackSection: "\u5DF2\u56DE\u9000",
   showRolledBack: "\u5C55\u5F00\u5DF2\u56DE\u9000\u7247\u6BB5",
@@ -196,8 +196,20 @@ var zh = {
   snapshotsTip: "\u56DE\u9000\u64CD\u4F5C\u4FDD\u5B58\u7684\u5386\u53F2\u7248\u672C\u5217\u8868\uFF0C\u53EF\u5207\u6362\u6062\u590D\u3002",
   trashTip: "\u8F6F\u5220\u9664\u7684\u7247\u6BB5\uFF0C\u672C\u4F1A\u8BDD\u5185\u53EF\u64A4\u9500\u3002",
   rollbackTip: "\u56DE\u9000\u5230\u8FD9\u6761\u8F93\u5165\uFF08\u5C06\u5176\u540E\u6240\u6709\u5185\u5BB9\u6807\u8BB0\u4E3A stale\uFF09\u3002",
-  realtimeTip: "\u5F00\u542F\u540E\uFF0C\u5220\u9664/\u66FF\u6362/\u56DE\u9000\u4F1A\u771F\u6B63\u6539\u53D8\u6A21\u578B\u4E0B\u4E00\u6B21\u6536\u5230\u7684\u5185\u5BB9\u3002",
+  realtimeTip: "\u5F00\u542F\u540E\uFF0C\u66FF\u6362/\u5220\u9664/\u56DE\u9000\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u5E76\u771F\u6B63\u751F\u6548\uFF08\u751F\u6548\u524D\u6807\u8BB0\u300C\u5F85\u751F\u6548\u300D\uFF09\uFF1B\u5173\u95ED\u5219\u4EC5\u4FEE\u6539\u89C6\u56FE\u3002",
   segNotFound: "\u672A\u627E\u5230\u8BE5\u7247\u6BB5",
+  pending: "\u5F85\u751F\u6548",
+  pendingTip: "\u8BE5\u7F16\u8F91\u5DF2\u5165\u961F\uFF0C\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u540E\u751F\u6548\u3002",
+  applyFailed: "\u7F16\u8F91\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u5931\u8D25",
+  replacedSystem: "\u7CFB\u7EDF\u63D0\u793A\u8BCD\u5DF2\u66F4\u65B0\uFF1B\u300C\u771F\u5B9E\u751F\u6548\u300D\u5F00\u542F\u65F6\u5C06\u5728\u4E0B\u4E00\u6B21\u7EC4\u88C5\u63D0\u793A\u8BCD\u65F6\u751F\u6548\u3002",
+  sessionNotLive: "\u4F1A\u8BDD\u5F53\u524D\u4E0D\u6D3B\u8DC3\uFF1A\u7F16\u8F91\u4EC5\u5E94\u7528\u5230\u89C6\u56FE\uFF0C\u672A\u5165\u961F\u3002",
+  segmentGone: "\u76EE\u6807\u7247\u6BB5\u5DF2\u4E0D\u5728\u5F53\u524D\u4E0A\u4E0B\u6587\u8868\u9762\uFF08\u53EF\u80FD\u5DF2\u88AB\u538B\u7F29\u6216\u6539\u5199\uFF09\u3002",
+  unbalancedEdit: "\u8BE5\u7F16\u8F91\u4F1A\u622A\u65AD\u5DE5\u5177\u8C03\u7528/\u7ED3\u679C\u914D\u5BF9\uFF0C\u5DF2\u62D2\u7EDD\u3002",
+  toolResultChanged: "\u5DE5\u5177\u7ED3\u679C\u53EA\u5141\u8BB8\u4FEE\u6539\u6B63\u6587\u5185\u5BB9\u3002",
+  invalidTemplate: "\u5185\u5BB9\u4E0D\u80FD\u5305\u542B\u300C{{\u300D\uFF08\u4F1A\u88AB\u5F53\u4F5C\u6A21\u677F\u53D8\u91CF\u5BFC\u81F4\u8BF7\u6C42\u5931\u8D25\uFF09\u3002",
+  undoneQueued: "\u5DF2\u64A4\u9500\u6700\u8FD1\u64CD\u4F5C\uFF1B\u82E5\u539F\u7F16\u8F91\u5DF2\u751F\u6548\uFF0C\u5C06\u5728\u4E0B\u4E00\u6B65\u4EE5\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002",
+  deletedQueued: "\u5DF2\u5220\u9664\u5E76\u5165\u961F\uFF1A\u8BE5\u7247\u6BB5\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\uFF08\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF09\u3002",
+  undoUnavailable: "\u65E0\u6CD5\u64A4\u9500\uFF1A\u8BE5\u7F16\u8F91\u5DF2\u65E0\u6CD5\u5728\u5F53\u524D\u4E0A\u4E0B\u6587\u4E2D\u5B9A\u4F4D\u3002",
   cannotReplaceSystem: "\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u4E0D\u53EF\u66FF\u6362\uFF08\u53EA\u8BFB\uFF09\u3002",
   toolReadonly: "\u5DE5\u5177\u8C03\u7528/\u7ED3\u679C\u4E0D\u53EF\u7F16\u8F91\uFF08\u4EC5\u53EF\u67E5\u770B\uFF09\u3002",
   invalidTurn: "\u65E0\u6548\u7684\u56DE\u9000\u8F6E\u6B21",
@@ -207,12 +219,12 @@ var zh = {
   cannotDeleteSystem: "\u4E0D\u53EF\u5220\u9664\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u3002",
   cannotDeleteUser: "\u4E0D\u53EF\u5220\u9664\u5F53\u524D\u8F6E\u6B21\u7684 user \u6D88\u606F\u3002",
   nothingDelete: "\u672A\u9009\u62E9\u53EF\u5220\u9664\u7684\u7247\u6BB5\u3002",
-  nothingUndo: "\u6CA1\u6709\u53EF\u64A4\u9500\u7684\u5220\u9664\u3002",
+  nothingUndo: "\u6CA1\u6709\u53EF\u64A4\u9500\u7684\u64CD\u4F5C\u3002",
   undoneNotice: "\u5DF2\u64A4\u9500\u6700\u8FD1\u4E00\u6B21\u5220\u9664\u3002",
   interceptFailed: "\u5B9E\u65F6\u6539\u5199\u5931\u8D25\uFF0C\u672C\u6B21\u8BF7\u6C42\u5DF2\u6309\u672A\u4FEE\u6539\u7684\u539F\u59CB\u5185\u5BB9\u53D1\u9001",
   invalidEff: "\u65E0\u6548\u7684\u6709\u6548\u6027\u53D6\u503C\u3002",
   overrideCleared: "\u5DF2\u53D6\u6D88\u624B\u52A8\u8986\u76D6\u3002",
-  realtimeOnNotice: "\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A\u7F16\u8F91\u5C06\u5F71\u54CD\u6A21\u578B\u8F93\u5165\u3002",
+  realtimeOnNotice: "\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A\u7F16\u8F91\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u751F\u6548\u3002",
   realtimeOffNotice: "\u771F\u5B9E\u751F\u6548\u5DF2\u5173\u95ED\u3002",
   legTitle: "\u56FE\u4F8B",
   legCacheHit: "\u6709\u6548\u4E14\u547D\u4E2D\u7F13\u5B58\uFF08\u9884\u6D4B\uFF09",
@@ -221,7 +233,7 @@ var zh = {
   legRedundant: "\u4E0E\u53E6\u4E00\u6BB5\u51E0\u4E4E\u91CD\u590D\uFF0C\u53EF\u5B89\u5168\u5220\u9664",
   legStale: "\u8F83\u65E7\u7ED3\u679C\u3001\u8FD1\u671F\u672A\u7528\uFF1B\u7EA2\u8272=\u53EF\u5B89\u5168\u5220\u9664",
   legInjected: "\u7CFB\u7EDF/\u62A4\u680F\u5185\u5BB9\uFF0C\u9501\u5B9A\u4E0D\u53EF\u5220\u9664",
-  legReplace: "\u7F16\u8F91\u7247\u6BB5\u5185\u5BB9\uFF08\u7CFB\u7EDF\u6CE8\u5165\u4E0E\u5DE5\u5177\u7ED3\u679C\u53EA\u8BFB\uFF09",
+  legReplace: "\u7F16\u8F91\u7247\u6BB5\u5185\u5BB9\uFF08\u4EC5\u521D\u59CB\u7CFB\u7EDF\u63D0\u793A\u8BCD\u53EF\u6539\uFF1B\u5176\u4F59\u7CFB\u7EDF\u6CE8\u5165\u4E0E\u5DE5\u5177\u7ED3\u679C\u53EA\u8BFB\uFF09",
   legDelete: "\u8F6F\u5220\u9664\u8FDB\u56DE\u6536\u7AD9\uFF08\u672C\u4F1A\u8BDD\u53EF\u64A4\u9500\uFF09",
   legMark: "\u624B\u52A8\u8986\u76D6\u81EA\u52A8\u6709\u6548\u6027\u5224\u5B9A",
   tipEffective: "\u6709\u6548\uFF1A\u6A21\u578B\u56DE\u7B54\u65F6\u786E\u5B9E\u7528\u5230\u4E86\u8FD9\u6BB5\u5185\u5BB9\u2014\u2014\u4FDD\u7559\u3002",
@@ -233,7 +245,7 @@ var zh = {
   tipCachePartial: "\u90E8\u5206\u547D\u4E2D\uFF08\u9884\u6D4B\uFF09\uFF1A\u8FD9\u6BB5\u53EA\u6709\u4E00\u90E8\u5206\u53EF\u80FD\u5728\u7F13\u5B58\u91CC\u3002",
   expTurn: "\u4E00\u4E2A\u8F6E\u6B21 = \u4E00\u6B21\u300C\u7528\u6237\u8F93\u5165 \u2192 \u52A9\u624B\u591A\u6B65\u56DE\u590D\u300D\u7684\u5B8C\u6574\u56DE\u5408\u3002",
   expSegCount: "\u8FD9\u4E2A\u6570\u5B57\u662F\u8BE5\u8F6E\u6B21\u91CC\u5305\u542B\u7684\u4E0A\u4E0B\u6587\u7247\u6BB5\u6761\u6570\uFF08\u6D88\u606F / \u5DE5\u5177\u8C03\u7528 / \u5DE5\u5177\u7ED3\u679C\uFF09\u3002",
-  expSystem: "\u7CFB\u7EDF\u81EA\u52A8\u6CE8\u5165\u7684\u63D0\u793A\u5185\u5BB9\uFF08\u5982\u8FD0\u884C\u4E0A\u4E0B\u6587\u3001\u6280\u80FD\u76EE\u5F55\uFF09\uFF0C\u6A21\u578B\u6BCF\u6B21\u63A8\u7406\u90FD\u4F1A\u770B\u5230\uFF0C\u4E0D\u53EF\u7F16\u8F91\u6216\u5220\u9664\u3002",
+  expSystem: "\u7CFB\u7EDF\u81EA\u52A8\u6CE8\u5165\u7684\u63D0\u793A\u5185\u5BB9\uFF08\u5982\u8FD0\u884C\u4E0A\u4E0B\u6587\u3001\u6280\u80FD\u76EE\u5F55\uFF09\uFF0C\u6A21\u578B\u6BCF\u6B21\u63A8\u7406\u90FD\u4F1A\u770B\u5230\u3002\u9664\u521D\u59CB\u7CFB\u7EDF\u63D0\u793A\u8BCD\u53EF\u66FF\u6362\u5916\uFF0C\u5176\u4F59\u4E0D\u53EF\u7F16\u8F91\u6216\u5220\u9664\u3002",
   expUserInput: "\u4F60\u53D1\u7ED9\u6A21\u578B\u7684\u5B9E\u9645\u8BF7\u6C42\u5185\u5BB9\u3002"
 };
 var en = {
@@ -281,7 +293,7 @@ var en = {
   confirmTitle: "Confirm action",
   impact: "Impact",
   risk: "Risk",
-  undo: "Undo last delete",
+  undo: "Undo last operation",
   restore: "Switch to this snapshot",
   rolledBackSection: "Rolled back",
   showRolledBack: "Show rolled-back segments",
@@ -317,8 +329,20 @@ var en = {
   snapshotsTip: "Saved history versions from rollbacks; switch to restore.",
   trashTip: "Soft-deleted segments; undoable this session.",
   rollbackTip: "Roll back to this input (mark everything after it stale).",
-  realtimeTip: "When ON, delete/replace/rollback actually change what the model receives next.",
+  realtimeTip: `When ON, replace/delete/rollback are written to the session log at the model's next step and truly take effect (marked "pending" until then); OFF is view-only.`,
   segNotFound: "Segment not found",
+  pending: "pending",
+  pendingTip: "This edit is queued; it is written to the session log and takes effect at the model's next step.",
+  applyFailed: "Failed to log the edit",
+  replacedSystem: "System prompt updated; with Apply-for-real ON it takes effect at the next prompt assembly.",
+  sessionNotLive: "Session is not live: the edit stayed view-only and was not queued.",
+  segmentGone: "The target segment is no longer on the live surface (compacted or rewritten).",
+  unbalancedEdit: "Rejected: the edit would split a tool call/result pair.",
+  toolResultChanged: "Only the content of a tool result may be changed.",
+  invalidTemplate: 'Content must not contain "{{" (treated as a template variable; would fail the request).',
+  undoneQueued: "Undone; if the original edit was already applied, it is reversed by a counter-edit at the next step.",
+  deletedQueued: "Deleted and queued: the segment is replaced by a placeholder marker at the next step (logged).",
+  undoUnavailable: "Cannot undo: the edit can no longer be located on the live surface.",
   cannotReplaceSystem: "System-injected content is read-only and cannot be replaced.",
   toolReadonly: "Tool call/result is read-only.",
   invalidTurn: "Invalid turn index",
@@ -333,7 +357,7 @@ var en = {
   interceptFailed: "Realtime rewrite failed; this request was sent with the original unmodified content",
   invalidEff: "Invalid effectiveness value.",
   overrideCleared: "Manual override cleared.",
-  realtimeOnNotice: "Realtime apply enabled: edits now affect the model input.",
+  realtimeOnNotice: "Apply-for-real enabled: edits are written to the session log and take effect at the model's next step.",
   realtimeOffNotice: "Realtime apply disabled.",
   legTitle: "Legend",
   legCacheHit: "valid and cache hit (prediction)",
@@ -342,7 +366,7 @@ var en = {
   legRedundant: "nearly identical to another segment; safe to delete",
   legStale: "old result, unused recently; red = safe to delete",
   legInjected: "system/guardrail content; locked, cannot delete",
-  legReplace: "edit a segment's content (system-injected and tool results are read-only)",
+  legReplace: "edit a segment's content (only the initial system prompt is editable; other system-injected content and tool results are read-only)",
   legDelete: "soft-delete to the trash (undo this session)",
   legMark: "manually override the auto effectiveness verdict",
   tipEffective: "Effective: the model actually uses this text \u2014 keep it.",
@@ -354,7 +378,7 @@ var en = {
   tipCachePartial: "Partial (prediction): only part of this is cached.",
   expTurn: 'A turn = one full "user input \u2192 assistant multi-step reply" round.',
   expSegCount: "How many context segments (messages / tool calls / tool results) this round contains.",
-  expSystem: "System-injected prompt content (runtime context, skill catalog) the model sees every step; not editable/deletable.",
+  expSystem: "System-injected prompt content (runtime context, skill catalog) the model sees every step. Only the initial system prompt is replaceable; the rest is read-only.",
   expUserInput: "The actual request you sent to the model."
 };
 
@@ -597,8 +621,11 @@ function CtmView(props) {
     if (!notice) return null;
     const c = notice.text;
     if (/^replaced_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u66FF\u6362\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E ${c.split("_")[1]} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09` : `Replaced; this segment and the next ${c.split("_")[1]} messages lost their cache (prefix break).`;
+    if (/^replaced_queued_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u66FF\u6362\u5E76\u5165\u961F\uFF1A\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E ${c.split("_")[2]} \u6761\u6D88\u606F\u7F13\u5B58\u5931\u6548\uFF08\u524D\u7F00\u65AD\u88C2\uFF09` : `Replaced and queued: logged at the model's next step; this segment and the next ${c.split("_")[2]} messages lose their cache (prefix break).`;
     if (/^rolled_back_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u56DE\u9000\uFF1B\u5176\u540E ${c.split("_").slice(2).join("_")} \u6761\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u672A\u5220\u9664\uFF09` : `Rolled back; ${c.split("_").slice(2).join("_")} later segments marked stale (kept).`;
+    if (/^rollback_queued_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u56DE\u9000\u5E76\u5165\u961F\uFF1A\u5176\u540E ${c.split("_")[2]} \u6761\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\uFF08\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF09` : `Rolled back and queued: ${c.split("_")[2]} later segments will be replaced by one placeholder marker at the next step (logged).`;
     if (/^deleted_\d+$/.test(c)) return lang === "zh" ? `\u5DF2\u5220\u9664 ${c.split("_")[1]} \u6761\u7247\u6BB5\uFF08\u8F6F\u5220\u9664\uFF0C\u53EF\u64A4\u9500\uFF09` : `Deleted ${c.split("_")[1]} segments (soft delete, undoable).`;
+    if (/^realtime_on_queued_\d+$/.test(c)) return lang === "zh" ? `\u771F\u5B9E\u751F\u6548\u5DF2\u5F00\u542F\uFF1A${c.split("_")[3]} \u9879\u89C6\u56FE\u7F16\u8F91\u5DF2\u5165\u961F\uFF0C\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u65E5\u5FD7\u751F\u6548` : `Apply-for-real ON: ${c.split("_")[3]} view edit(s) queued; they are logged and take effect at the model's next step.`;
     if (/^override_(\w+)$/.test(c)) return (lang === "zh" ? "\u5DF2\u624B\u52A8\u6807\u8BB0\u4E3A " : "Manually marked as ") + effLabel(c.slice(9));
     const map2 = {
       segment_not_found: "segNotFound",
@@ -616,7 +643,16 @@ function CtmView(props) {
       override_cleared: "overrideCleared",
       invalid_effectiveness: "invalidEff",
       realtime_on: "realtimeOnNotice",
-      realtime_off: "realtimeOffNotice"
+      realtime_off: "realtimeOffNotice",
+      deleted_queued: "deletedQueued",
+      replaced_system: "replacedSystem",
+      session_not_live: "sessionNotLive",
+      segment_gone: "segmentGone",
+      unbalanced_edit: "unbalancedEdit",
+      tool_result_changed: "toolResultChanged",
+      invalid_template: "invalidTemplate",
+      undone_queued: "undoneQueued",
+      undo_unavailable: "undoUnavailable"
     };
     if (map2[c] !== void 0) return t(map2[c]);
     return c;
@@ -664,14 +700,14 @@ function CtmView(props) {
   };
   const opInfo = (name) => {
     const zhL = lang === "zh";
-    if (name === "replace") return { title: t("replace"), impact: zhL ? "\u53EA\u4FEE\u6539\u8BE5\u7247\u6BB5\u7684\u6B63\u6587\u5185\u5BB9\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E\u6240\u6709\u7247\u6BB5\u7684\u7F13\u5B58\u6807\u8BB0\u90FD\u4F1A\u5931\u6548\uFF08\u524D\u7F00\u7F13\u5B58\u65AD\u88C2\uFF09\u3002" : "Only edits this segment's text; it and every later segment lose their cache mark (prefix break).", risk: zhL ? "\u7CFB\u7EDF\u6CE8\u5165\u5185\u5BB9\u4E0E\u5DE5\u5177\u7ED3\u679C\u5747\u4E3A\u53EA\u8BFB\uFF0C\u4E0D\u53EF\u66FF\u6362\u3002" : "System-injected content and tool results are read-only." };
-    if (name === "delete") return { title: t("delete"), impact: zhL ? "\u628A\u8BE5\u7247\u6BB5\u8F6F\u5220\u9664\uFF08\u8FDB\u56DE\u6536\u7AD9\uFF0C\u672C\u4F1A\u8BDD\u53EF\u64A4\u9500\uFF09\uFF1Bturn_index \u4FDD\u7559\u7A7A\u6D1E\uFF1B\u7F13\u5B58\u9884\u6D4B\u91CD\u7B97\u3002" : "Soft-deletes the segment (to trash, undoable this session); turn_index keeps its hole; cache prediction recalculates.", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u5220\u9664\u540E\u6A21\u578B\u4E0B\u4E00\u6B21\u8BF7\u6C42\u5C06\u4E0D\u518D\u6536\u5230\u8BE5\u7247\u6BB5\uFF08\u5DE5\u5177\u7ED3\u679C\u4F1A\u8FDE\u540C\u5BF9\u5E94\u5DE5\u5177\u8C03\u7528\u4E00\u8D77\u79FB\u9664\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4ECE\u89C6\u56FE\u79FB\u9664\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : state?.realtime ? "Realtime is ON: the model will no longer receive this segment (a tool result is removed together with its tool call)." : "Realtime is OFF: view-only; the model still receives this segment." };
-    if (name === "rollback") return { title: t("rollback"), impact: zhL ? "\u628A\u8BE5\u8F6E\u6B21\u4E4B\u540E\u7684\u6240\u6709\u7247\u6BB5\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u4E0D\u5220\u9664\uFF09\uFF0C\u5E76\u751F\u6210\u4E00\u4E2A\u5FEB\u7167\u3002" : "Marks every later segment stale (kept, not deleted) and creates a snapshot.", risk: zhL ? "\u8FD9\u4E9B\u7247\u6BB5\u4F1A\u8FDB\u5165\u300C\u5DF2\u56DE\u9000\u300D\u6298\u53E0\u533A\uFF0C\u53EF\u968F\u65F6\u524D\u6EDA\u6062\u590D\u3002" : "They move to the rolled-back folded area; you can roll forward anytime." };
+    if (name === "replace") return { title: t("replace"), impact: zhL ? "\u53EA\u4FEE\u6539\u8BE5\u7247\u6BB5\u7684\u6B63\u6587\u5185\u5BB9\uFF1B\u8BE5\u7247\u6BB5\u53CA\u5176\u540E\u6240\u6709\u7247\u6BB5\u7684\u7F13\u5B58\u6807\u8BB0\u90FD\u4F1A\u5931\u6548\uFF08\u524D\u7F00\u7F13\u5B58\u65AD\u88C2\uFF09\u3002" : "Only edits this segment's text; it and every later segment lose their cache mark (prefix break).", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u66FF\u6362\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u540E\u751F\u6548\uFF08\u671F\u95F4\u6807\u8BB0\u300C\u5F85\u751F\u6548\u300D\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4FEE\u6539\u89C6\u56FE\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : state?.realtime ? `Apply-for-real is ON: the replacement is written to the session log at the model's next step (shown as "pending" until then).` : "Apply-for-real is OFF: view-only; the model still receives the original content." };
+    if (name === "delete") return { title: t("delete"), impact: zhL ? "\u628A\u8BE5\u7247\u6BB5\u8F6F\u5220\u9664\uFF08\u8FDB\u56DE\u6536\u7AD9\uFF0C\u672C\u4F1A\u8BDD\u53EF\u64A4\u9500\uFF09\uFF1Bturn_index \u4FDD\u7559\u7A7A\u6D1E\uFF1B\u7F13\u5B58\u9884\u6D4B\u91CD\u7B97\u3002" : "Soft-deletes the segment (to trash, undoable this session); turn_index keeps its hole; cache prediction recalculates.", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u8BE5\u7247\u6BB5\u5C06\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u88AB\u4E00\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF08replay \u4E0E token \u8BA1\u91CF\u81EA\u52A8\u4E00\u81F4\uFF09\u3002" : "\u5F53\u524D\u300C\u771F\u5B9E\u751F\u6548\u300D\u5173\u95ED\uFF1A\u4EC5\u4ECE\u89C6\u56FE\u79FB\u9664\uFF0C\u4E0D\u6539\u53D8\u6A21\u578B\u771F\u5B9E\u6536\u5230\u7684\u5185\u5BB9\u3002" : state?.realtime ? "Apply-for-real is ON: at the model's next step the segment is replaced by a placeholder marker, written to the session log (replay and token accounting stay consistent)." : "Apply-for-real is OFF: view-only; the model still receives this segment." };
+    if (name === "rollback") return { title: t("rollback"), impact: zhL ? "\u628A\u8BE5\u8F6E\u6B21\u4E4B\u540E\u7684\u6240\u6709\u7247\u6BB5\u6807\u8BB0\u4E3A stale\uFF08\u4FDD\u7559\u4E0D\u5220\u9664\uFF09\uFF0C\u5E76\u751F\u6210\u4E00\u4E2A\u5FEB\u7167\u3002" : "Marks every later segment stale (kept, not deleted) and creates a snapshot.", risk: zhL ? state?.realtime ? "\u300C\u771F\u5B9E\u751F\u6548\u300D\u5DF2\u5F00\u542F\uFF1A\u56DE\u9000\u533A\u95F4\u5C06\u5728\u4E0B\u4E00\u6B65\u88AB\u5355\u6761\u5360\u4F4D\u6807\u8BB0\u66FF\u6362\u5E76\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\uFF1B\u539F\u59CB\u5185\u5BB9\u4ECD\u7559\u5728\u65E5\u5FD7\u7684 transcript \u91CC\u3002" : "\u8FD9\u4E9B\u7247\u6BB5\u4F1A\u8FDB\u5165\u300C\u5DF2\u56DE\u9000\u300D\u6298\u53E0\u533A\uFF0C\u53EF\u968F\u65F6\u524D\u6EDA\u6062\u590D\u3002" : state?.realtime ? "Apply-for-real is ON: the rolled-back range is replaced by one placeholder marker at the next step and logged; the originals stay in the log transcript." : "They move to the rolled-back folded area; you can roll forward anytime." };
     if (name === "override") return { title: `${t("markStale")} / ${t("markEffective")}`, impact: zhL ? "\u4EC5\u624B\u52A8\u8986\u76D6\u8BE5\u7247\u6BB5\u7684\u6709\u6548\u6027\u6807\u8BB0\uFF08\u5F71\u54CD\u989C\u8272\u4E0E\u5EFA\u8BAE\uFF09\uFF0C\u4E0D\u6539\u53D8\u5185\u5BB9\u3002" : "Only overrides the effectiveness label (color/suggestion); content unchanged.", risk: zhL ? "\u65E0\u98CE\u9669\uFF08\u7EAF\u6807\u6CE8\uFF0C\u53EF\u518D\u6B21\u70B9\u51FB\u53D6\u6D88\u8986\u76D6\uFF09\u3002" : "No risk (label only; click again to clear)." };
     if (name === "reset") return { title: t("reset"), impact: zhL ? "\u6E05\u7A7A\u6240\u6709\u7F16\u8F91\uFF08\u66FF\u6362/\u5220\u9664/\u56DE\u9000/\u5FEB\u7167\uFF09\uFF0C\u56DE\u5230\u6700\u65B0\u5B9E\u65F6\u4E0A\u4E0B\u6587\u3002" : "Clears all edits (replace/delete/rollback/snapshots) and returns to the latest live context.", risk: zhL ? "\u4E0D\u53EF\u64A4\u9500\u2014\u2014\u4E4B\u524D\u7684\u7F16\u8F91\u4F1A\u5168\u90E8\u4E22\u5931\u3002" : "Irreversible \u2014 all prior edits are lost." };
     if (name === "restore") return { title: t("restore"), impact: zhL ? "\u6062\u590D\u5230\u8BE5\u5FEB\u7167\u4FDD\u5B58\u65F6\u7684\u4E0A\u4E0B\u6587\uFF08\u9010\u5B57\u8282\u4E00\u81F4\uFF09\uFF0C\u5E76\u6E05\u9664\u6B64\u540E\u7684\u7F16\u8F91\u3002" : "Restores the context exactly as saved in that snapshot; clears later edits.", risk: zhL ? "\u5FEB\u7167\u4E4B\u540E\u7684\u7F16\u8F91\u4F1A\u4E22\u5931\u3002" : "Edits made after the snapshot are lost." };
-    if (name === "undo") return { title: t("undo"), impact: zhL ? "\u6062\u590D\u6700\u8FD1\u4E00\u6B21\u5220\u9664\u7684\u7247\u6BB5\u3002" : "Restores the most recently deleted segments.", risk: zhL ? "\u65E0\u98CE\u9669\u3002" : "No risk." };
-    if (name === "setRealtime") return { title: t("realtime"), impact: zhL ? "\u5F00\u542F\u540E\uFF0C\u5220\u9664/\u66FF\u6362/\u56DE\u9000\u4F1A\u771F\u6B63\u6539\u5199\u6A21\u578B\u4E0B\u4E00\u6B21\u63A8\u7406\u6536\u5230\u7684\u5185\u5BB9\uFF08\u771F\u6B63\u8282\u7701 token\uFF09\u3002" : "When ON, delete/replace/rollback actually rewrite what the model receives next (really saves tokens).", risk: zhL ? "\u4F1A\u6539\u5199\u6B63\u5728\u8FD0\u884C\u7684\u6A21\u578B\u8F93\u5165\uFF1B\u5982\u5F02\u5E38\u8BF7\u7ACB\u5373\u5173\u95ED\uFF0C\u6216\u70B9\u300C\u91CD\u7F6E\u300D\u6E05\u7A7A\u6240\u6709\u7F16\u8F91\u3002" : "Rewrites the live model input; turn it off immediately if anything looks wrong, or Reset to clear all edits." };
+    if (name === "undo") return { title: t("undo"), impact: zhL ? "\u64A4\u9500\u6700\u8FD1\u4E00\u6B21\u64CD\u4F5C\uFF1A\u8FD8\u672A\u751F\u6548\u7684\u6392\u961F\u7F16\u8F91\u76F4\u63A5\u79FB\u9664\uFF1B\u5DF2\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u4EE5\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\u3002\u4EC5\u652F\u6301\u64A4\u9500\u6700\u8FD1\u4E00\u7EC4\u64CD\u4F5C\u3002" : "Undoes the most recent operation: a queued (not yet applied) edit is simply removed; an already-logged edit is reversed by a counter-edit at the model's next step. Only the latest operation can be undone.", risk: zhL ? "\u65E0\u98CE\u9669\u3002" : "No risk." };
+    if (name === "setRealtime") return { title: t("realtime"), impact: zhL ? "\u5F00\u542F\u540E\uFF0C\u66FF\u6362/\u5220\u9664/\u56DE\u9000\u4F1A\u5728\u6A21\u578B\u4E0B\u4E00\u6B65\u63A8\u7406\u65F6\u5199\u5165\u4F1A\u8BDD\u65E5\u5FD7\u5E76\u771F\u6B63\u751F\u6548\uFF08\u771F\u6B63\u8282\u7701 token\uFF09\uFF1B\u5DF2\u505A\u7684\u89C6\u56FE\u7F16\u8F91\u4F1A\u4E00\u5E76\u5165\u961F\u3002" : "When ON, replace/delete/rollback are written to the session log at the model's next step and truly take effect (really saves tokens); pending view edits are queued too.", risk: zhL ? "\u5199\u5165\u65E5\u5FD7\u7684\u7F16\u8F91\u4E0D\u53EF\u62B9\u9664\uFF0C\u53EA\u80FD\u518D\u5199\u4E00\u6761\u53CD\u5411\u4FEE\u6539\u8FD8\u539F\uFF1Breplay \u4E0E token \u8BA1\u91CF\u59CB\u7EC8\u4E0E\u6A21\u578B\u5B9E\u9645\u6240\u89C1\u4E00\u81F4\u3002" : "A logged edit cannot be erased, only reversed by a counter-edit; replay and token accounting always match what the model actually saw." };
     return { title: t("confirmTitle"), impact: "", risk: "" };
   };
   const askConfirm = (name, args) => setConfirmOp({ name, args });
@@ -734,6 +770,7 @@ ${nodeSuggestion(node)}`;
       renderToolCalls(seg),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-actions", children: [
         !isSystem && seg.role !== "tool" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => setEditing({ id: seg.id, text: seg.content, role: roleLabel(seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
+        seg.id === "seg-system" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => setEditing({ id: seg.id, text: seg.content, role: roleLabel(seg.role), turnIndex: seg.turn_index }), children: t("replace") }),
         !isSystem && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn danger", disabled: busy, onClick: () => askConfirm("delete", { segmentId: seg.id }), children: t("delete") }),
         isUserInput && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", title: t("rollbackTip"), disabled: busy, onClick: () => askConfirm("rollback", { turnIndex: seg.turn_index }), children: t("rollback") }),
         !isSystem && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "ctm-btn", disabled: busy, onClick: () => askConfirm("override", { segmentId: seg.id, value: seg.effectiveness === "effective" ? "stale" : "effective" }), children: seg.effectiveness === "effective" ? t("markStale") : t("markEffective") })
@@ -751,7 +788,10 @@ ${nodeSuggestion(node)}`;
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("eff") }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `ctm-badge eff-${seg.effectiveness || "effective"}`, title: effTip(seg.effectiveness), children: effLabel(seg.effectiveness) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { children: t("seg") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { children: `#${seg.turn_index} \xB7 ${fmtTime(seg.created_at)}${seg.edited ? " \xB7 " + t("edited") : ""}` })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dd", { children: [
+          `#${seg.turn_index} \xB7 ${fmtTime(seg.created_at)}${seg.edited ? " \xB7 " + t("edited") : ""}`,
+          seg.pending && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ctm-badge unknown", title: t("pendingTip"), children: t("pending") })
+        ] })
       ] }),
       body
     ] }, seg.id);
@@ -893,6 +933,11 @@ ${nodeSuggestion(node)}`;
       t("interceptFailed"),
       "\uFF1A",
       state.interceptError
+    ] }),
+    (state.applyError ?? null) !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice error", children: [
+      t("applyFailed"),
+      "\uFF1A",
+      state.applyError
     ] }),
     error51 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "ctm-notice error", children: [
       t("opFailed"),
@@ -15513,6 +15558,8 @@ var ctmSegmentSchema = external_exports.object({
   edited: external_exports.boolean(),
   deleted: external_exports.boolean(),
   rolledBack: external_exports.boolean(),
+  /** Queued for the next agent/pre-step but not yet logged to the surface. */
+  pending: external_exports.boolean().optional(),
   turn: external_exports.number().nullable(),
   step: external_exports.number().nullable(),
   toolCalls: external_exports.array(ctmToolCallSchema),
@@ -15550,8 +15597,10 @@ var ctmStateSchema = external_exports.object({
   snapshots: external_exports.array(ctmSnapshotMetaSchema),
   trash: external_exports.array(ctmSegmentSchema),
   notice: ctmNoticeSchema.nullable(),
-  /** Last realtime-interception failure, surfaced so a silent fallback is visible. */
-  interceptError: external_exports.string().nullable().optional()
+  /** Legacy realtime-interceptor failure (kept for wire compatibility; always unset on hosts that log edits). */
+  interceptError: external_exports.string().nullable().optional(),
+  /** Last queued-edit flush failure at agent/pre-step, surfaced so a dropped edit is visible. */
+  applyError: external_exports.string().nullable().optional()
 });
 var ctmRequestSchema = external_exports.discriminatedUnion("op", [
   external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string() }),

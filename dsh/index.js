@@ -14558,6 +14558,8 @@ var ctmSegmentSchema = external_exports.object({
   edited: external_exports.boolean(),
   deleted: external_exports.boolean(),
   rolledBack: external_exports.boolean(),
+  /** Queued for the next agent/pre-step but not yet logged to the surface. */
+  pending: external_exports.boolean().optional(),
   turn: external_exports.number().nullable(),
   step: external_exports.number().nullable(),
   toolCalls: external_exports.array(ctmToolCallSchema),
@@ -14595,8 +14597,10 @@ var ctmStateSchema = external_exports.object({
   snapshots: external_exports.array(ctmSnapshotMetaSchema),
   trash: external_exports.array(ctmSegmentSchema),
   notice: ctmNoticeSchema.nullable(),
-  /** Last realtime-interception failure, surfaced so a silent fallback is visible. */
-  interceptError: external_exports.string().nullable().optional()
+  /** Legacy realtime-interceptor failure (kept for wire compatibility; always unset on hosts that log edits). */
+  interceptError: external_exports.string().nullable().optional(),
+  /** Last queued-edit flush failure at agent/pre-step, surfaced so a dropped edit is visible. */
+  applyError: external_exports.string().nullable().optional()
 });
 var ctmRequestSchema = external_exports.discriminatedUnion("op", [
   external_exports.object({ op: external_exports.literal("getState"), sessionId: external_exports.string() }),
@@ -14614,31 +14618,253 @@ var ctmResponseSchema = external_exports.discriminatedUnion("ok", [
   external_exports.object({ ok: external_exports.literal(false), error: external_exports.string() })
 ]);
 
+// src/bigrams.ts
+var BIGRAM_CACHE_CAP = 500;
+function bigramsOf(content) {
+  const set2 = /* @__PURE__ */ new Set();
+  for (let k = 0; k < content.length - 1; k++) set2.add(content.slice(k, k + 2));
+  return set2;
+}
+function createBigramCache(cap = BIGRAM_CACHE_CAP) {
+  const map2 = /* @__PURE__ */ new Map();
+  return {
+    get(content) {
+      const hit = map2.get(content);
+      if (hit !== void 0) {
+        map2.delete(content);
+        map2.set(content, hit);
+        return hit;
+      }
+      const built = bigramsOf(content);
+      map2.set(content, built);
+      if (map2.size > cap) {
+        const oldest = map2.keys().next();
+        if (!oldest.done) map2.delete(oldest.value);
+      }
+      return built;
+    },
+    get size() {
+      return map2.size;
+    }
+  };
+}
+function jaccardSimilarity(a, b) {
+  if (a.size + b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+
+// src/surface-edits.ts
+var CTM_PLUGIN_SOURCE = { kind: "plugin", plugin: "ctm" };
+var EditPlanError = class extends Error {
+  constructor(code) {
+    super(code);
+    this.code = code;
+  }
+};
+function eventDelta(event) {
+  if (event === void 0) return 0;
+  if (event.type === "assistant/message") {
+    const content = event.data?.message?.content;
+    if (!Array.isArray(content)) return 0;
+    let calls = 0;
+    for (const block of content) if (block !== null && block?.type === "tool-call") calls++;
+    return calls;
+  }
+  if (event.type === "tool/result") return -1;
+  return 0;
+}
+function eventForSeq(session, seq) {
+  const direct = session.events[seq];
+  if (direct !== void 0 && direct.seq === seq) return direct;
+  return session.events.find((e) => e.seq === seq);
+}
+function cutBalanced(session, seq, offset) {
+  let inProgressToolCalls = 0;
+  for (const s of session.surface.nodes) {
+    if (s === seq && offset === 0) return inProgressToolCalls === 0;
+    inProgressToolCalls += eventDelta(eventForSeq(session, s));
+    if (inProgressToolCalls < 0) return false;
+    if (s === seq) return inProgressToolCalls === 0;
+  }
+  return false;
+}
+function toolPairingBalancedBefore(session, seq) {
+  return cutBalanced(session, seq, 0);
+}
+function toolPairingBalancedAfter(session, seq) {
+  return cutBalanced(session, seq, 1);
+}
+var fallbackId = 0;
+function messageId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `ctm-msg-${Date.now()}-${fallbackId++}`;
+}
+function buildUserMessageData(text, source, id = messageId()) {
+  return { id, role: "user", content: [{ type: "text", text }], source: source ?? { kind: "user" } };
+}
+function requireOnSurface(session, seq) {
+  if (!session.surface.nodes.includes(seq)) throw new EditPlanError("target_not_on_surface");
+}
+function requireBalanced(session, seq) {
+  if (!toolPairingBalancedBefore(session, seq) || !toolPairingBalancedAfter(session, seq)) {
+    throw new EditPlanError("unbalanced");
+  }
+}
+function planReplaceUserMessage(session, seq, text, source) {
+  requireOnSurface(session, seq);
+  requireBalanced(session, seq);
+  return {
+    type: "user/message",
+    data: buildUserMessageData(text, source),
+    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+  };
+}
+function planRewriteToolResult(session, seq, text) {
+  requireOnSurface(session, seq);
+  const original = eventForSeq(session, seq);
+  if (original?.type !== "tool/result") throw new EditPlanError("not_tool_result");
+  const data = structuredClone(original.data);
+  const result = data?.message?.content?.[0];
+  if (result === void 0 || result === null) throw new EditPlanError("not_tool_result");
+  result.content = text;
+  return {
+    type: "tool/result",
+    data,
+    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+  };
+}
+function planDeleteSegment(session, seq, marker) {
+  requireOnSurface(session, seq);
+  requireBalanced(session, seq);
+  return {
+    type: "user/message",
+    data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
+    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+  };
+}
+function planRollback(session, startSeq, marker) {
+  const nodes = session.surface.nodes;
+  let startIdx = nodes.indexOf(startSeq);
+  if (startIdx === -1) {
+    startIdx = nodes.findIndex((s) => s >= startSeq);
+    if (startIdx === -1) throw new EditPlanError("empty_range");
+  }
+  const start = nodes[startIdx];
+  const end = nodes[nodes.length - 1];
+  if (nodes.length === 0 || startIdx > nodes.length - 1) throw new EditPlanError("empty_range");
+  if (!toolPairingBalancedBefore(session, start) || !toolPairingBalancedAfter(session, end)) {
+    throw new EditPlanError("unbalanced");
+  }
+  return {
+    type: "user/message",
+    data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
+    intent: {
+      surfaceOp: { op: "replace", start, end },
+      sourceEventSeqs: nodes.slice(startIdx)
+    }
+  };
+}
+function planEdit(session, edit) {
+  switch (edit.kind) {
+    case "replace-user":
+      return planReplaceUserMessage(session, edit.seq, edit.text, edit.source);
+    case "replace-tool":
+      return planRewriteToolResult(session, edit.seq, edit.text);
+    case "delete":
+      return planDeleteSegment(session, edit.seq, edit.marker);
+    case "rollback":
+      return planRollback(session, edit.startSeq, edit.marker);
+    case "undo":
+      return planUndo(session, edit.applied);
+  }
+}
+function planUndo(session, applied) {
+  requireOnSurface(session, applied.replacementSeq);
+  const original = eventForSeq(session, applied.originalSeq);
+  if (original === void 0) throw new EditPlanError("target_not_on_surface");
+  if (applied.kind === "replace-tool") {
+    const current = eventForSeq(session, applied.replacementSeq);
+    if (current?.type !== "tool/result") throw new EditPlanError("not_tool_result");
+    const data = structuredClone(current.data);
+    data.message.content[0].content = original.data?.message?.content?.[0]?.content;
+    return {
+      type: "tool/result",
+      data,
+      intent: {
+        surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+        sourceEventSeqs: [applied.replacementSeq]
+      }
+    };
+  }
+  if (original.type !== "user/message") throw new EditPlanError("not_user_message");
+  requireBalanced(session, applied.replacementSeq);
+  return {
+    type: "user/message",
+    data: { ...structuredClone(original.data), id: messageId() },
+    intent: {
+      surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+      sourceEventSeqs: [applied.replacementSeq]
+    }
+  };
+}
+function applyEditGroup(session, group) {
+  let replacementSeq = -1;
+  let originalSeq = -1;
+  let kind = null;
+  for (const edit of group.edits) {
+    const plan = planEdit(session, edit);
+    const appended = session.append(plan.type, plan.data, plan.intent);
+    replacementSeq = appended.seq;
+    if (originalSeq === -1) {
+      originalSeq = edit.kind === "undo" ? edit.applied.originalSeq : edit.kind === "rollback" ? edit.startSeq : edit.seq;
+    }
+    kind = edit.kind;
+  }
+  if (kind === null) return null;
+  return { groupId: group.id, kind, replacementSeq, originalSeq, undoable: group.undoable };
+}
+
 // src/host.ts
 var name = "ctm";
-var inject = ["sessionQuery", "sessions", "tokenMeter", "llm"];
+var inject = ["sessionQuery", "sessions", "tokenMeter"];
 var TOOL_RESULT_PREVIEW = 2e3;
 var CONTENT_CAP = 4e4;
+var MAX_SESSION_STORES = 50;
+var MAX_SNAPSHOTS_PER_SESSION = 20;
+var MAX_TRASH_PER_SESSION = 50;
 function storeFor(map2, sessionId) {
-  let s = map2.get(sessionId);
-  if (!s) {
-    s = {
-      base: null,
-      lastBase: [],
-      edits: /* @__PURE__ */ new Map(),
-      deleted: /* @__PURE__ */ new Set(),
-      trash: [],
-      undoStack: null,
-      overrides: /* @__PURE__ */ new Map(),
-      rolledBack: /* @__PURE__ */ new Set(),
-      snapshots: [],
-      head: "live",
-      version: 0,
-      usage: null,
-      model: null,
-      lastInterceptError: null
-    };
-    map2.set(sessionId, s);
+  const existing = map2.get(sessionId);
+  if (existing) {
+    map2.delete(sessionId);
+    map2.set(sessionId, existing);
+    return existing;
+  }
+  const s = {
+    base: null,
+    lastBase: [],
+    edits: /* @__PURE__ */ new Map(),
+    deleted: /* @__PURE__ */ new Set(),
+    trash: [],
+    undoStack: null,
+    overrides: /* @__PURE__ */ new Map(),
+    rolledBack: /* @__PURE__ */ new Set(),
+    snapshots: [],
+    head: "live",
+    version: 0,
+    usage: null,
+    model: null,
+    queue: [],
+    appliedEdits: [],
+    systemOverride: null,
+    systemOverridePending: false,
+    lastApplyError: null
+  };
+  map2.set(sessionId, s);
+  if (map2.size > MAX_SESSION_STORES) {
+    const oldest = map2.keys().next();
+    if (!oldest.done) map2.delete(oldest.value);
   }
   return s;
 }
@@ -14679,12 +14905,7 @@ function blockInnerText(b) {
   }
   return "";
 }
-function isTextOnly(m) {
-  const c = m?.content;
-  if (!Array.isArray(c) || c.length === 0) return false;
-  for (const b of c) if (b && b.type !== "text" && b.type !== "reasoning") return false;
-  return true;
-}
+var bigramCache = createBigramCache(BIGRAM_CACHE_CAP);
 function computeEffectiveness(segments, overrides) {
   const n = segments.length;
   const assistantAfter = new Array(n).fill(0);
@@ -14717,19 +14938,12 @@ function computeEffectiveness(segments, overrides) {
         reason = "recent_tool";
       } else {
         let maxSim = 0;
+        const a = bigramCache.get(seg.content || "");
         for (let j = 0; j < n; j++) {
           if (j === i) continue;
           const other = segments[j];
           if (other === void 0 || other.source === "system_inject") continue;
-          const a = /* @__PURE__ */ new Set();
-          const b = /* @__PURE__ */ new Set();
-          const sa = seg.content || "";
-          const sb = other.content || "";
-          for (let k = 0; k < sa.length - 1; k++) a.add(sa.slice(k, k + 2));
-          for (let k = 0; k < sb.length - 1; k++) b.add(sb.slice(k, k + 2));
-          let inter = 0;
-          for (const x of a) if (b.has(x)) inter++;
-          const sim = a.size + b.size === 0 ? 0 : inter / (a.size + b.size - inter);
+          const sim = jaccardSimilarity(a, bigramCache.get(other.content || ""));
           if (sim > maxSim) maxSim = sim;
         }
         if (maxSim > 0.92) {
@@ -14750,7 +14964,21 @@ function computeEffectiveness(segments, overrides) {
 function apply(ctx) {
   const stores = /* @__PURE__ */ new Map();
   const realtimeSessions = /* @__PURE__ */ new Set();
-  let applying = false;
+  let groupCounter = 0;
+  const logger = (() => {
+    try {
+      return ctx.logger?.("ctm") ?? console;
+    } catch {
+      return console;
+    }
+  })();
+  function liveSession(sessionId) {
+    return ctx.sessions?.get?.(sessionId);
+  }
+  function newGroupId() {
+    groupCounter++;
+    return "edit-" + Date.now() + "-" + groupCounter;
+  }
   function segmentFromEvent(ev, index, nodeTokens) {
     const d = ev.data || {};
     let role;
@@ -14841,7 +15069,7 @@ function apply(ctx) {
     const sq = ctx.sessionQuery;
     const events = (await sq?.readSurface?.(sessionId))?.events ?? [];
     const nodeTokens = /* @__PURE__ */ new Map();
-    const live = ctx.sessions?.get?.(sessionId);
+    const live = liveSession(sessionId);
     let systemText = null;
     if (live !== void 0) {
       try {
@@ -14964,10 +15192,20 @@ function apply(ctx) {
     }
     return out;
   }
+  function pendingIds(st) {
+    const ids = /* @__PURE__ */ new Set();
+    for (const group of st.queue) for (const id of group.segmentIds) ids.add(id);
+    return ids;
+  }
   function compute(sessionId, st, notice) {
     const base = st.base ?? st.lastBase;
     const segments = applyMutations(base, st);
     computeEffectiveness(segments, st.overrides);
+    const pending = pendingIds(st);
+    for (const seg of segments) {
+      if (pending.has(seg.id)) seg.pending = true;
+      if (seg.id === "seg-system" && st.systemOverridePending) seg.pending = true;
+    }
     const cacheTokens = st.usage?.cacheReadTokens ?? 0;
     let cum = 0;
     let broken = false;
@@ -15007,7 +15245,8 @@ function apply(ctx) {
       snapshots: st.snapshots.map((s) => ({ id: s.id, createdAt: s.createdAt, label: s.label, segmentCount: s.segments.length })),
       trash: st.trash,
       notice,
-      interceptError: st.lastInterceptError
+      interceptError: null,
+      applyError: st.lastApplyError
     };
   }
   async function run(sessionId, fn) {
@@ -15031,6 +15270,95 @@ function apply(ctx) {
     for (const s of list) if (s.role === "user" && s.source === "user_input") best = s;
     return best;
   }
+  function eventBySeq(session, seq) {
+    const direct = session.events[seq];
+    if (direct !== void 0 && direct.seq === seq) return direct;
+    return session.events.find((e) => e.seq === seq);
+  }
+  function replacementSource(session, seg) {
+    if (seg.role === "assistant") return { kind: "user" };
+    const source = eventBySeq(session, seg.seq)?.data?.source;
+    try {
+      return source === void 0 ? { kind: "user" } : structuredClone(source);
+    } catch {
+      return { kind: "user" };
+    }
+  }
+  function planErrorNotice(code) {
+    switch (code) {
+      case "target_not_on_surface":
+        return "segment_gone";
+      case "unbalanced":
+        return "unbalanced_edit";
+      case "not_tool_result":
+        return "tool_result_changed";
+      case "not_user_message":
+        return "segment_gone";
+      case "empty_range":
+        return "nothing_to_delete";
+    }
+  }
+  function releaseViewMutations(st, group) {
+    for (const id of group.segmentIds) {
+      st.edits.delete(id);
+      if (st.deleted.delete(id)) st.trash = st.trash.filter((t) => t.id !== id);
+      st.rolledBack.delete(id);
+    }
+  }
+  function flushQueuedEdits(session, st) {
+    const groups = st.queue;
+    st.queue = [];
+    for (const group of groups) {
+      try {
+        const applied = applyEditGroup(session, group);
+        if (applied !== null && applied.undoable) st.appliedEdits.push(applied);
+        st.lastApplyError = null;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.warn(`[ctm] queued ${group.kind} edit could not be applied:`, msg);
+        st.lastApplyError = msg;
+      } finally {
+        releaseViewMutations(st, group);
+      }
+    }
+  }
+  function enqueue(st, session, kind, undoable, edit, segmentIds) {
+    try {
+      planEdit(session, edit);
+    } catch (e) {
+      if (e instanceof EditPlanError) return planErrorNotice(e.code);
+      throw e;
+    }
+    st.queue.push({ id: newGroupId(), kind, undoable, edits: [edit], segmentIds });
+    return null;
+  }
+  function enqueueViewMutations(sessionId, st, cur) {
+    const session = liveSession(sessionId);
+    if (session === void 0) return 0;
+    let count = 0;
+    for (const [id, content] of st.edits) {
+      if (id === "seg-system") continue;
+      const seg = findSeg(cur, id);
+      if (!seg) continue;
+      const edit = seg.role === "tool" ? { kind: "replace-tool", seq: seg.seq, text: content } : { kind: "replace-user", seq: seg.seq, text: content, source: replacementSource(session, seg) };
+      if (enqueue(st, session, "replace", seg.role !== "assistant", edit, [id]) === null) count++;
+    }
+    for (const id of st.deleted) {
+      const seg = findSeg(cur, id);
+      if (!seg || seg.seq < 0) continue;
+      const edit = { kind: "delete", seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` };
+      if (enqueue(st, session, "delete", eventBySeq(session, seg.seq)?.type === "user/message", edit, [id]) === null) count++;
+    }
+    if (st.rolledBack.size > 0) {
+      let startSeq = -1;
+      for (const s of cur) if (st.rolledBack.has(s.id) && s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq;
+      if (startSeq >= 0) {
+        const edit = { kind: "rollback", startSeq, marker: "[CTM] The conversation was rolled back by the user." };
+        if (enqueue(st, session, "rollback", false, edit, [...st.rolledBack]) === null) count++;
+      }
+    }
+    return count;
+  }
   function dispatch(request, st, cur) {
     switch (request.op) {
       case "getState":
@@ -15038,15 +15366,31 @@ function apply(ctx) {
       case "replace": {
         const seg = findSeg(cur, request.segmentId);
         if (!seg) return { kind: "error", text: "segment_not_found" };
-        if (seg.source === "system_inject") return { kind: "error", text: "cannot_replace_system" };
-        if (seg.source === "tool_call" || seg.role === "tool") return { kind: "error", text: "tool_readonly" };
-        st.edits.set(seg.id, String(request.content ?? ""));
+        const content = String(request.content ?? "");
+        if (seg.id === "seg-system") {
+          if (content.includes("{{")) return { kind: "error", text: "invalid_template" };
+          st.systemOverride = content;
+          st.systemOverridePending = realtimeSessions.has(request.sessionId);
+          st.edits.set(seg.id, content);
+          return { kind: "ok", text: "replaced_system" };
+        }
+        st.edits.set(seg.id, content);
         let idx = -1;
         for (let i = 0; i < cur.length; i++) if (cur[i]?.id === seg.id) {
           idx = i;
           break;
         }
-        return { kind: "ok", text: "replaced_" + Math.max(0, cur.length - idx - 1) };
+        const later = Math.max(0, cur.length - idx - 1);
+        if (!realtimeSessions.has(request.sessionId)) return { kind: "ok", text: "replaced_" + later };
+        const session = liveSession(request.sessionId);
+        if (session === void 0) return { kind: "warn", text: "session_not_live" };
+        const edit = seg.role === "tool" ? { kind: "replace-tool", seq: seg.seq, text: content } : { kind: "replace-user", seq: seg.seq, text: content, source: replacementSource(session, seg) };
+        const error51 = enqueue(st, session, "replace", seg.role !== "assistant", edit, [seg.id]);
+        if (error51 !== null) {
+          st.edits.delete(seg.id);
+          return { kind: "error", text: error51 };
+        }
+        return { kind: "ok", text: "replaced_queued_" + later };
       }
       case "delete": {
         const seg = findSeg(cur, request.segmentId);
@@ -15057,21 +15401,54 @@ function apply(ctx) {
         if (st.deleted.has(seg.id)) return { kind: "ok", text: "deleted_0" };
         const c = cloneSegment(seg);
         c.deleted = true;
-        st.trash = st.trash.concat(c);
+        st.trash = st.trash.concat(c).slice(-MAX_TRASH_PER_SESSION);
         st.deleted.add(seg.id);
-        st.undoStack = { ids: [seg.id] };
-        return { kind: "ok", text: "deleted_1" };
+        if (!realtimeSessions.has(request.sessionId)) {
+          st.undoStack = { ids: [seg.id] };
+          return { kind: "ok", text: "deleted_1" };
+        }
+        const session = liveSession(request.sessionId);
+        if (session === void 0) {
+          st.undoStack = { ids: [seg.id] };
+          return { kind: "warn", text: "session_not_live" };
+        }
+        const edit = { kind: "delete", seq: seg.seq, marker: `[CTM] A ${seg.role} context segment was removed by the user.` };
+        const error51 = enqueue(st, session, "delete", eventBySeq(session, seg.seq)?.type === "user/message", edit, [seg.id]);
+        if (error51 !== null) {
+          st.deleted.delete(seg.id);
+          st.trash = st.trash.filter((t) => t.id !== seg.id);
+          return { kind: "error", text: error51 };
+        }
+        st.undoStack = null;
+        return { kind: "ok", text: "deleted_queued" };
       }
       case "rollback": {
         const t = request.turnIndex;
         if (typeof t !== "number" || t < 0) return { kind: "error", text: "invalid_turn" };
         st.snapshots.push({ id: "snap-" + Date.now() + "-" + Math.floor(Math.random() * 1e4), createdAt: Date.now(), label: "rollback_to_" + t, segments: cur.map(cloneSegment) });
+        if (st.snapshots.length > MAX_SNAPSHOTS_PER_SESSION) st.snapshots.shift();
         st.head = st.snapshots[st.snapshots.length - 1].id;
+        const previous = new Set(st.rolledBack);
         st.rolledBack.clear();
         let count = 0;
-        for (const s of cur) if (s.turn_index > t) {
-          st.rolledBack.add(s.id);
-          count++;
+        let startSeq = -1;
+        for (const s of cur) {
+          if (s.turn_index > t) {
+            st.rolledBack.add(s.id);
+            count++;
+            if (s.seq >= 0 && (startSeq < 0 || s.seq < startSeq)) startSeq = s.seq;
+          }
+        }
+        if (realtimeSessions.has(request.sessionId) && count > 0 && startSeq >= 0) {
+          const session = liveSession(request.sessionId);
+          if (session === void 0) return { kind: "warn", text: "session_not_live" };
+          const edit = { kind: "rollback", startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` };
+          const error51 = enqueue(st, session, "rollback", false, edit, [...st.rolledBack]);
+          if (error51 !== null) {
+            st.rolledBack = previous;
+            return { kind: "error", text: error51 };
+          }
+          return { kind: "ok", text: "rollback_queued_" + count };
         }
         return { kind: "ok", text: "rolled_back_" + count };
       }
@@ -15095,13 +15472,51 @@ function apply(ctx) {
         st.rolledBack.clear();
         st.snapshots = [];
         st.head = "live";
+        st.queue = [];
+        st.appliedEdits = [];
+        st.systemOverride = null;
+        st.systemOverridePending = false;
+        st.lastApplyError = null;
         return { kind: "ok", text: "reset" };
       case "undo": {
-        if (!st.undoStack || !st.undoStack.ids.length) return { kind: "warn", text: "nothing_to_undo" };
-        for (const id of st.undoStack.ids) st.deleted.delete(id);
-        st.trash = st.trash.filter((t) => !st.undoStack.ids.includes(t.id));
-        st.undoStack = null;
-        return { kind: "ok", text: "undone" };
+        const queued = st.queue[st.queue.length - 1];
+        if (queued) {
+          st.queue.pop();
+          releaseViewMutations(st, queued);
+          return { kind: "ok", text: "undone_queued" };
+        }
+        if (st.undoStack && st.undoStack.ids.length) {
+          for (const id of st.undoStack.ids) st.deleted.delete(id);
+          st.trash = st.trash.filter((t) => !st.undoStack.ids.includes(t.id));
+          st.undoStack = null;
+          return { kind: "ok", text: "undone" };
+        }
+        const applied = st.appliedEdits[st.appliedEdits.length - 1];
+        if (applied) {
+          const session = liveSession(request.sessionId);
+          if (session === void 0) return { kind: "warn", text: "undo_unavailable" };
+          try {
+            planUndo(session, applied);
+          } catch (e) {
+            if (e instanceof EditPlanError) return { kind: "warn", text: "undo_unavailable" };
+            throw e;
+          }
+          st.appliedEdits.pop();
+          const original = eventBySeq(session, applied.originalSeq);
+          const originalData = original?.data;
+          let originalText;
+          if (applied.kind === "replace-tool") {
+            originalText = blockInnerText(originalData?.message?.content?.[0]?.content);
+          } else {
+            const blocks = originalData?.content ?? originalData?.message?.content;
+            originalText = Array.isArray(blocks) ? blocks.map(blockInnerText).filter(Boolean).join("\n") : blockInnerText(blocks ?? null);
+          }
+          const replacementId = "seg-" + applied.replacementSeq;
+          st.queue.push({ id: newGroupId(), kind: "undo", undoable: false, edits: [{ kind: "undo", applied }], segmentIds: [replacementId] });
+          if (originalText) st.edits.set(replacementId, originalText);
+          return { kind: "ok", text: "undone_queued" };
+        }
+        return { kind: "warn", text: "nothing_to_undo" };
       }
       case "override": {
         const seg = findSeg(cur, request.segmentId);
@@ -15115,94 +15530,44 @@ function apply(ctx) {
         return { kind: "ok", text: "override_" + request.value };
       }
       case "setRealtime":
-        if (request.enabled) realtimeSessions.add(request.sessionId);
-        else realtimeSessions.delete(request.sessionId);
-        return request.enabled ? { kind: "ok", text: "realtime_on" } : { kind: "ok", text: "realtime_off" };
+        if (request.enabled) {
+          realtimeSessions.add(request.sessionId);
+          if (st.systemOverride !== null) st.systemOverridePending = true;
+          const queuedCount = enqueueViewMutations(request.sessionId, st, cur);
+          return queuedCount > 0 ? { kind: "ok", text: "realtime_on_queued_" + queuedCount } : { kind: "ok", text: "realtime_on" };
+        }
+        realtimeSessions.delete(request.sessionId);
+        return { kind: "ok", text: "realtime_off" };
       default:
         return { kind: "error", text: "unknown_op" };
     }
   }
-  const logger = (() => {
+  ctx.on("agent/pre-step", (payload, next) => {
     try {
-      return ctx.logger?.("ctm") ?? console;
-    } catch {
-      return console;
-    }
-  })();
-  function intercept(options, next) {
-    const sid = options?.sessionId;
-    try {
-      if (!sid || applying || !realtimeSessions.has(sid)) return next();
-      const st = stores.get(sid);
-      if (!st) return next();
-      const excludeIds = /* @__PURE__ */ new Set();
-      const editMap = /* @__PURE__ */ new Map();
-      const deletedResultCallIds = /* @__PURE__ */ new Set();
-      const deletedCallIds = /* @__PURE__ */ new Set();
-      for (const seg of st.lastBase) {
-        if (!seg.messageId) continue;
-        if (st.deleted.has(seg.id) || st.rolledBack.has(seg.id)) {
-          excludeIds.add(seg.messageId);
-          if (seg.toolCallId) deletedResultCallIds.add(seg.toolCallId);
-          for (const tc of seg.toolCalls) if (tc.id) deletedCallIds.add(tc.id);
-        }
-        if (st.edits.has(seg.id)) editMap.set(seg.messageId, st.edits.get(seg.id));
-      }
-      if (!excludeIds.size && !editMap.size) return next();
-      const msgs = options?.messages;
-      if (!Array.isArray(msgs)) return next();
-      const out = [];
-      let changed = false;
-      for (const m of msgs) {
-        if (m?.id && excludeIds.has(m.id)) {
-          changed = true;
-          continue;
-        }
-        let outMsg = m;
-        if (deletedResultCallIds.size && outMsg?.role === "assistant" && Array.isArray(outMsg.content)) {
-          const filtered = outMsg.content.filter((b) => !(b && b.type === "tool-call" && b.id !== void 0 && deletedResultCallIds.has(b.id)));
-          if (filtered.length !== outMsg.content.length) {
-            changed = true;
-            outMsg = { ...outMsg, content: filtered };
-          }
-        }
-        if (deletedCallIds.size && outMsg && Array.isArray(outMsg.content)) {
-          const orphan = outMsg.content.some((b) => b && b.type === "tool-result" && b.toolCallId !== void 0 && deletedCallIds.has(b.toolCallId));
-          if (orphan) {
-            changed = true;
-            continue;
-          }
-        }
-        if (outMsg?.id && editMap.has(outMsg.id) && isTextOnly(outMsg)) {
-          changed = true;
-          outMsg = { ...outMsg, content: [{ type: "text", text: editMap.get(outMsg.id) }] };
-        }
-        if (outMsg && Array.isArray(outMsg.content) && outMsg.content.length === 0) {
-          changed = true;
-          continue;
-        }
-        out.push(outMsg);
-      }
-      if (!changed) return next();
-      applying = true;
-      try {
-        const result = ctx.llm.stream({ ...options, messages: out });
-        st.lastInterceptError = null;
-        return result;
-      } finally {
-        applying = false;
-      }
+      const session = payload?.agent?.session;
+      const sid = typeof session?.id === "string" ? session.id : void 0;
+      const st = sid === void 0 ? void 0 : stores.get(sid);
+      if (session !== void 0 && st !== void 0 && st.queue.length > 0) flushQueuedEdits(session, st);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      logger.warn("[ctm] realtime interception failed, sending the unmodified request instead:", msg);
-      if (sid) {
-        const st = stores.get(sid);
-        if (st) st.lastInterceptError = msg;
-      }
-      return next();
+      logger.warn("[ctm] failed to flush queued edits:", e instanceof Error ? e.message : String(e));
     }
-  }
-  ctx.on("llm/stream", (options, next) => intercept(options, next));
+    return next();
+  });
+  ctx.on("system-prompt/assemble", async (_assembly, context, next) => {
+    const result = await next();
+    try {
+      const sid = context?.agent?.session?.id;
+      if (typeof sid !== "string" || !realtimeSessions.has(sid)) return result;
+      const st = stores.get(sid);
+      if (st === void 0 || st.systemOverride === null) return result;
+      st.systemOverridePending = false;
+      st.edits.delete("seg-system");
+      return { ...result, sections: [{ name: "ctm:override", text: st.systemOverride }] };
+    } catch (e) {
+      logger.warn("[ctm] failed to apply the system-prompt override:", e instanceof Error ? e.message : String(e));
+      return result;
+    }
+  });
   ctx.inject(["webServer"], (scope) => {
     return scope.webServer.register({
       kind: "exact",

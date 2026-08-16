@@ -52,6 +52,8 @@ export const ctmSegmentSchema = z.object({
   edited: z.boolean(),
   deleted: z.boolean(),
   rolledBack: z.boolean(),
+  /** Queued for the next agent/pre-step but not yet logged to the surface. */
+  pending: z.boolean().optional(),
   turn: z.number().nullable(),
   step: z.number().nullable(),
   toolCalls: z.array(ctmToolCallSchema),
@@ -97,8 +99,10 @@ export const ctmStateSchema = z.object({
   snapshots: z.array(ctmSnapshotMetaSchema),
   trash: z.array(ctmSegmentSchema),
   notice: ctmNoticeSchema.nullable(),
-  /** Last realtime-interception failure, surfaced so a silent fallback is visible. */
+  /** Legacy realtime-interceptor failure (kept for wire compatibility; always unset on hosts that log edits). */
   interceptError: z.string().nullable().optional(),
+  /** Last queued-edit flush failure at agent/pre-step, surfaced so a dropped edit is visible. */
+  applyError: z.string().nullable().optional(),
 })
 export type CtmState = z.infer<typeof ctmStateSchema>
 
