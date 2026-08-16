@@ -52,8 +52,10 @@
 - v6：修复加载崩溃（sessionProjections 未声明 inject 被 cordis 守卫拦截）；可选服务改走 ctx.inject 子上下文 + 守卫回归测试
 - v7：批量删除兄弟 tool 结果不再报 target_not_on_surface（flush 幂等化）
 - v8：CTM 占位消息归类修正（识别 source.plugin === 'ctm'，归用户输入栏 + protected 只读，不再混入系统提示词栏）
+- v9：已回退区补收起按钮；片段卡片加复制按钮（宿主对话 UI 无回填输入框钩子，复制是回退后重发的手动路径）
 
 ## 已知遗留
 
 - client 尚未发送 `expectedVersion`（host 侧保护是 opt-in 的）；`stale_version` 通知码在 client notices 里无映射，会显示原始码。
 - 角色降格恢复的语义限制见 README「已知限制」。
+- 宿主「对话」标签页是完整 transcript 视图（ui-conversation 包）：被 shadow/compaction 的内容按官方设计仍然显示，CTM 无法改变其渲染；Kimi Code 式「回退后回填输入框重新编辑」在 DSH 无对应钩子，官方近似是消息上的 fork（分叉新会话）。
