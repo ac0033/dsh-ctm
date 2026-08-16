@@ -2,7 +2,7 @@
 // lazy-CJS browser bundle). The shared contract.ts and zod are inlined into both.
 import { build } from 'esbuild'
 
-const ID = '@deepseek-ai/dsh-ctm'
+const ID = 'dsh-ctm'
 
 // Host half → dsh/index.js (ESM, Node)
 await build({

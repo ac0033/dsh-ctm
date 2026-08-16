@@ -12,10 +12,10 @@ export const inject = ['slots', 'locale']
 
 export function apply(ctx: any): void {
   // Inject the plugin stylesheet once (idempotent across re-evaluation).
-  const tagId = '@deepseek-ai/dsh-ctm/ctm.css'
+  const tagId = 'dsh-ctm/ctm.css'
   if (typeof document !== 'undefined' && document.querySelector('style[data-plugin-css="' + tagId + '"]') === null) {
     const tag = document.createElement('style')
-    tag.dataset.plugin = '@deepseek-ai/dsh-ctm'
+    tag.dataset.plugin = 'dsh-ctm'
     tag.dataset.pluginCss = tagId
     tag.textContent = CSS
     document.head.appendChild(tag)
