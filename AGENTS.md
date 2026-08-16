@@ -32,6 +32,7 @@
 - **删除是 shadow**：replace 事件用占位节点占据被 shadow 的区间，日志保留所以可撤销。删 tool 结果必须用最小平衡区间（`minimalBalancedRange`）把携带 tool-call 的 assistant 消息一起吸收，否则模型看到悬空调用。
 - **角色降格**：日志 append-only，撤销回退/配对删除时内容只能以 user/message 身份恢复（第一条 replace 进占位、其余 append 补尾）。这是已知限制，README 有说明。
 - **usage 口径**：三个桶互斥——未命中输入 / 缓存命中输入 / 输出，reasoning 是 output 的子集不单独计。优先读 tokenUsage 投影，事件折叠做兜底。
+- **cordis 服务访问守卫**：Context 代理对「未在 inject 声明的服务属性」的读取直接抛 `cannot get property "X" without inject`——可选链救不了，抛错发生在属性访问时。可选服务的官方模式是 `ctx.inject(['service'], child => ...)` 子上下文（参考 dsh-goal）：服务存在才激活回调。教训：单测里的普通对象假 ctx 不会抛错，这类 bug 单测抓不到，`tests/helpers/fake-ctx.ts` 的 `cordisInjectGuard` 专门模拟这个守卫做回归。
 - 不变量校验看 `D:/4_Projects/deepseek-harness/packages/core/session/src/invariant.ts`，surface fold 语义看同目录 `surface.ts`。`tests/helpers/fake-session.ts` 是逐条对齐这两个文件的假实现，改 DSH 相关逻辑时保持同步。
 
 ## 测试结构
@@ -47,6 +48,7 @@
 - v3：MECE token 口径（三桶 + 命中率，投影优先；轮/step 级实测，片段级估算标注）
 - v4：步骤行去重数字
 - v5：沙箱验证（最小平衡区间删除、可撤销回退、expectedVersion 并发保护、集成测试 8 场景）
+- v6：修复加载崩溃（sessionProjections 未声明 inject 被 cordis 守卫拦截）；可选服务改走 ctx.inject 子上下文 + 守卫回归测试
 
 ## 已知遗留
 
