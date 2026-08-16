@@ -15720,7 +15720,9 @@ function apply(ctx) {
         if (realtimeSessions.has(request.sessionId) && count > 0 && startSeq >= 0) {
           const session = liveSession(request.sessionId);
           if (session === void 0) return { kind: "warn", code: "session_not_live" };
-          const edit = { kind: "rollback", startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` };
+          const targetTurn = cur.find((s) => s.turn_index === t)?.turn;
+          const marker = typeof targetTurn === "number" ? `[CTM] The conversation was rolled back to turn ${targetTurn}; ${count} later segment(s) were removed.` : `[CTM] The conversation was rolled back by the user; ${count} later segment(s) were removed.`;
+          const edit = { kind: "rollback", startSeq, marker };
           const error51 = enqueue(st, session, "rollback", true, edit, [...st.rolledBack]);
           if (error51 !== null) {
             st.rolledBack = previous;

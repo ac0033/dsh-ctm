@@ -759,7 +759,17 @@ export function apply(ctx: any): void {
         if (realtimeSessions.has(request.sessionId) && count > 0 && startSeq >= 0) {
           const session = liveSession(request.sessionId)
           if (session === undefined) return { kind: 'warn', code: 'session_not_live' }
-          const edit: QueuedEdit = { kind: 'rollback', startSeq, marker: `[CTM] The conversation was rolled back to turn ${t}; ${count} later segment(s) were removed.` }
+          // The marker cites the DSH turn of the rollback target — the same
+          // numbering the panel's turn chips show — never the wire-level
+          // turnIndex (a sequential segment index), which read as a bogus
+          // "turn 64" next to a turn-4 conversation. Markers stay English by
+          // design: they are durable log content read by the model, and
+          // localizing them by panel locale would mix languages in the log.
+          const targetTurn = cur.find(s => s.turn_index === t)?.turn
+          const marker = typeof targetTurn === 'number'
+            ? `[CTM] The conversation was rolled back to turn ${targetTurn}; ${count} later segment(s) were removed.`
+            : `[CTM] The conversation was rolled back by the user; ${count} later segment(s) were removed.`
+          const edit: QueuedEdit = { kind: 'rollback', startSeq, marker }
           const error = enqueue(st, session, 'rollback', true, edit, [...st.rolledBack])
           if (error !== null) { st.rolledBack = previous; return { kind: 'error', code: error } }
           return { kind: 'ok', code: 'rollback_queued', params: { count } }

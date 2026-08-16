@@ -225,6 +225,27 @@ describe('integration: realtime ON rollback', () => {
     // Everything past the rollback point is shadowed, not deleted.
     for (const text of ['q2', 'a2', 'q3', 'a3']) expect(logRetains(s, text)).toBe(true)
   })
+
+  it('the marker cites the DSH turn number, not the sequential segment index', async () => {
+    const s = new FakeSession('s1')
+    plainTurn(s, 1, 'q1', 'a1')
+    plainTurn(s, 2, 'q2', 'a2')
+    plainTurn(s, 3, 'q3', 'a3')
+    const h = createHarness([s])
+    await h.post({ op: 'setRealtime', sessionId: 's1', enabled: true })
+
+    // Rolling back to 'a2': sequential index 3, but DSH turn 2 — the marker
+    // must say turn 2 (what the panel's turn chips show).
+    const st = await stateOf(h, 's1')
+    const target = findSeg(st, seg => seg.content === 'a2')
+    expect(target.turn_index).toBe(3)
+    expect(target.turn).toBe(2)
+    await noticeOf(h, { op: 'rollback', sessionId: 's1', turnIndex: target.turn_index })
+
+    await h.flush(s)
+    const seen = texts(s)
+    expect(seen[seen.length - 1]).toBe('[CTM] The conversation was rolled back to turn 2; 2 later segment(s) were removed.')
+  })
 })
 
 describe('integration: undo of a rollback (restore group)', () => {
