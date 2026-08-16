@@ -1,6 +1,25 @@
 # dsh-ctm — Context Transparency Manager
 
+中文 | [English](#english)
+
 把模型的「上下文」变成可见、可编辑、可评分的一等对象，作为 DeepSeek Harness 的自包含 bundle 插件发布。
+
+## English
+
+**dsh-ctm (Context Transparency Manager)** turns the model's context into a visible, editable, effectiveness-scored surface — a self-contained bundle plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
+
+- **Full visibility**: a turn → segment flow view colored by role / tokens / cache status / effectiveness, with markdown rendering and paging.
+- **Provider-measured token accounting**: MECE KPI buckets (uncached input / cache hit / output + derived hit rate), per-turn and per-step real usage, per-segment heuristic estimates clearly labeled as such.
+- **Logged, undoable edits**: replace / delete / rollback applied as surface `replace` events at `agent/pre-step` (the same mechanism and timing as official compaction), keeping DSH's *model-visible ⟺ logged* invariant — replay, fork and token accounting always match what the model actually saw. Everything is undoable; deletions shadow minimal tool-pair-balanced ranges so the model never sees a dangling tool call.
+- **Read-only by default**: every edit is view-only until *Apply for real* is switched on.
+
+Install into a profile (see the Chinese section below for details):
+
+```sh
+dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.0
+```
+
+Git installs build from source via the package's `prepare` script; pnpm will ask you to allow it once (`allowBuilds` in the profile's `pnpm-workspace.yaml`). MIT licensed.
 
 ## 特性
 
@@ -58,7 +77,7 @@ src/
 ```powershell
 # 从 GitHub 安装（锁定 tag 更稳妥；首次安装需在 profile 的 pnpm-workspace.yaml 里
 # 按 pnpm 提示加 allowBuilds 授权——git 安装只拉源码，包的 prepare 脚本会在安装时完成构建）
-dsh plugin --profile <name> add github:ac0033/dsh-ctm#v10
+dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.0
 dsh plugin --profile <name> remove dsh-ctm
 ```
 

@@ -1,10 +1,15 @@
 {
   "name": "dsh-ctm",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Context Transparency Manager: the model context as a visible, editable, effectiveness-scored surface (self-contained dsh bundle plugin)",
   "type": "module",
   "license": "MIT",
-  "author": "ac0033",
+  "author": "YuanLumen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ac0033/dsh-ctm.git"
+  },
+  "homepage": "https://github.com/ac0033/dsh-ctm#readme",
   "keywords": [
     "dsh",
     "dsh-plugin",
