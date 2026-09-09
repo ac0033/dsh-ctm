@@ -57,6 +57,9 @@ Every op may additionally carry an optional `expectedVersion` (the `version` of 
 
 **Known limitation**: undoing a rollback or a delete involving tool pairs restores the removed content as user messages (the first item replaces the placeholder node, the rest append to the tail) — an append-only log cannot re-add assistant/tool roles. This is the same role-demotion scheme as assistant edits.
 
+
+The bundled client does not currently send `expectedVersion`; the host check is available to callers that supply it, not a guarantee for every UI edit. The transcript view belongs to the host and may still show shadowed messages. Compatibility with a newer DeepSeek Harness revision should be checked against the host APIs used by this plugin.
+
 ## Install / uninstall
 
 ```sh

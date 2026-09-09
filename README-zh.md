@@ -57,6 +57,9 @@ src/
 
 **已知限制**：撤销「回滚」或「涉及工具配对的删除」时，被移除的内容以 user 消息角色恢复（第一条 replace 进占位节点、其余 append 到尾部）——append-only 日志无法按原 assistant/tool 角色补写，这是与 assistant 编辑一致的角色降格方案。
 
+
+当前内置客户端尚未发送 `expectedVersion`；host 端的版本检查仅对携带该字段的请求生效，不能理解为所有界面编辑都已获得并发保护。宿主的 transcript 标签页仍可能显示已被 shadow 的历史消息。升级 DeepSeek Harness 后，应核对插件使用的宿主接口是否兼容。
+
 ## 安装 / 卸载
 
 ```powershell
@@ -77,6 +80,6 @@ pnpm build            # 产出 dsh/index.js（host）+ dsh/client.js（client）
 
 ## 发布
 
-- CI 在 publish 前执行 `pnpm build`（建议加 `"prepublishOnly": "pnpm build"`），社区用户拿到的是预构建的 `dsh/index.js` + `dsh/client.js`，零构建。
+- 发布前需执行 `pnpm build`（可加 `"prepublishOnly": "pnpm build"`），社区用户拿到的是预构建的 `dsh/index.js` + `dsh/client.js`，零构建。
 - 运行时零依赖：`zod` 已内联进两个 bundle，`react` 走 shell 的模块表。
 - 换自己的 scope 时，同步改 `package.json` 的 `name` 和 `cordis.patch.yml` 里那行的 `name:`。
