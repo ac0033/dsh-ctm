@@ -54,6 +54,7 @@
 - v8：CTM 占位消息归类修正（识别 source.plugin === 'ctm'，归用户输入栏 + protected 只读，不再混入系统提示词栏）
 - v9：已回退区补收起按钮；片段卡片加复制按钮（宿主对话 UI 无回填输入框钩子，复制是回退后重发的手动路径）
 - v10：回退占位标记引用 DSH 轮次号（与面板轮次芯片同口径），不再用顺序片段索引；标记文本保持英文（日志内容面向模型，按面板语言本地化会把日志搅成多语言混合）
+- v13：适配 DeepSeek Harness `dsh-v0.1.5-rc.1` 的 Session V3：surface replace 使用 `startSeq/endSeq`，Session 日志读取使用 `snapshotEvents()` / `eventAt()`，系统提示词读取 `system/message`。
 
 ## 已知遗留
 

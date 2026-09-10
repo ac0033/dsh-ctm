@@ -24,6 +24,9 @@ class FakeSession implements SessionLike {
   surface = { nodes: [] as number[] }
   appended: { type: string; data: unknown; intent: unknown }[] = []
 
+  eventAt(seq: number): SessionEventLike | undefined { return this.events[seq] }
+  snapshotEvents(): readonly SessionEventLike[] { return [...this.events] }
+
   pushEvent(ev: SessionEventLike): void {
     this.events.push(ev)
     this.surface.nodes.push(ev.seq)
@@ -35,8 +38,8 @@ class FakeSession implements SessionLike {
     this.events.push({ seq, type, data: data as SessionEventLike['data'] })
     const op = intent?.surfaceOp
     if (typeof op === 'object') {
-      const start = this.surface.nodes.indexOf(op.start)
-      const end = this.surface.nodes.indexOf(op.end)
+      const start = this.surface.nodes.indexOf(op.startSeq)
+      const end = this.surface.nodes.indexOf(op.endSeq)
       if (start === -1 || end === -1) throw new Error('not found in surface')
       this.surface.nodes.splice(start, end - start + 1, seq)
     } else {
@@ -120,7 +123,7 @@ describe('planReplaceUserMessage', () => {
     expect(plan.data.role).toBe('user')
     expect(plan.data.content).toEqual([{ type: 'text', text: 'new' }])
     expect(plan.data.source).toEqual({ kind: 'plugin', plugin: 'x' })
-    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', start: 0, end: 0 })
+    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', startSeq: 0, endSeq: 0 })
     expect(plan.intent.sourceEventSeqs).toEqual([0])
   })
 
@@ -177,7 +180,7 @@ describe('planDeleteSegment', () => {
     expect(plan.type).toBe('user/message')
     expect(plan.data.content).toEqual([{ type: 'text', text: '[CTM] removed' }])
     expect(plan.data.source).toEqual(CTM_PLUGIN_SOURCE)
-    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', start: 0, end: 0 })
+    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', startSeq: 0, endSeq: 0 })
   })
 })
 
@@ -188,7 +191,7 @@ describe('planRollback', () => {
     s.pushEvent(userMsg(1, 'b'))
     s.pushEvent(userMsg(2, 'c'))
     const plan = planRollback(s, 1, '[CTM] rolled back')
-    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', start: 1, end: 2 })
+    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', startSeq: 1, endSeq: 2 })
     expect(plan.intent.sourceEventSeqs).toEqual([1, 2])
     expect(plan.data.source).toEqual(CTM_PLUGIN_SOURCE)
   })
@@ -199,11 +202,11 @@ describe('planRollback', () => {
     s.pushEvent(userMsg(1, 'b'))
     s.pushEvent(userMsg(2, 'c'))
     // Shadow seq 1 with an earlier edit; the rollback citing seq 1 must still work.
-    s.append('user/message', userMsg(3, 'x').data, { surfaceOp: { op: 'replace', start: 1, end: 1 }, sourceEventSeqs: [1] })
+    s.append('user/message', userMsg(3, 'x').data, { surfaceOp: { op: 'replace', startSeq: 1, endSeq: 1 }, sourceEventSeqs: [1] })
     const plan = planRollback(s, 1, '[CTM] rolled back')
     // The surface is now [0, 3, 2]: the range runs from the next surviving
     // node (3) to the surface tail (2).
-    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', start: 3, end: 2 })
+    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', startSeq: 3, endSeq: 2 })
     expect(plan.intent.sourceEventSeqs).toEqual([3, 2])
   })
 
@@ -291,7 +294,7 @@ describe('planUndo', () => {
     expect(plan.type).toBe('user/message')
     expect(plan.data.content).toEqual([{ type: 'text', text: 'original' }])
     expect(plan.data.id).not.toBe('m0') // a restore is a new message, not an id reuse
-    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', start: applied.replacementSeq, end: applied.replacementSeq })
+    expect(plan.intent.surfaceOp).toEqual({ op: 'replace', startSeq: applied.replacementSeq, endSeq: applied.replacementSeq })
   })
 
   it('reverses a logged tool-result rewrite with the original content', () => {

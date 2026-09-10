@@ -4,9 +4,8 @@
  * Self-contained dsh bundle plugin: a single `POST /ctm` JSON route (registered
  * through the host `webServer`) plus two waterfall listeners. The route reads
  * the live model surface (`sessionQuery.readSurface`) plus the assembled
- * system prompt (`session.requestHeader()`, with a `readSession()` fallback
- * for historical sessions), prices it with `tokenMeter`, and keeps a
- * per-session editable store.
+ * system prompt (the newest `system/message` on the Session V3 surface),
+ * prices it with `tokenMeter`, and keeps a per-session editable store.
  *
  * Real edits never rewrite an in-flight request: they are queued per session
  * and logged as surface `replace` events inside the `agent/pre-step`
@@ -221,9 +220,9 @@ export function apply(ctx: any): void {
     try { return (ctx.logger?.('ctm') ?? console) as { warn: (...args: unknown[]) => void } } catch { return console }
   })()
 
-  function liveSession(sessionId: string): (SessionLike & AppendCapable & { requestHeader?: () => { system?: string } | undefined }) | undefined {
+  function liveSession(sessionId: string): (SessionLike & AppendCapable & { requestHeader?: () => { config?: { provider?: string; model?: string } } | undefined }) | undefined {
     return (ctx.sessions as { get?: (id: string) => unknown } | undefined)?.get?.(sessionId) as
-      | (SessionLike & AppendCapable & { requestHeader?: () => { system?: string } | undefined })
+      | (SessionLike & AppendCapable & { requestHeader?: () => { config?: { provider?: string; model?: string } } | undefined })
       | undefined
   }
 
@@ -237,7 +236,9 @@ export function apply(ctx: any): void {
     let role: CtmSegment['role']
     let source: CtmSegment['source']
     let prot = false
-    if (ev.type === 'user/message') {
+    if (ev.type === 'system/message') {
+      role = 'system'; source = 'system_inject'; prot = true
+    } else if (ev.type === 'user/message') {
       const src = d.source as { kind?: string; plugin?: string } | undefined
       if (src?.kind === 'plugin' && src?.plugin === 'ctm') {
         // CTM's own placeholder/restoration markers: they ARE user/messages
@@ -284,7 +285,7 @@ export function apply(ctx: any): void {
       id: 'seg-' + seq, seq,
       messageId: ((d.message as { id?: string } | undefined)?.id) || (typeof d.id === 'string' ? d.id : null),
       turn_index: index, role, source,
-      sourceKind: (d.source as { kind?: string } | undefined)?.kind ?? null,
+      sourceKind: ((d.source ?? msg.source) as { kind?: string } | undefined)?.kind ?? null,
       content, reasoning, text: prose, toolCallId, token_count,
       cache_status: 'unknown', effectiveness: 'effective', reason: '', strongStale: false,
       created_at: typeof ev.time === 'number' ? ev.time : 0, parent_id: null, tags: [],
@@ -301,59 +302,21 @@ export function apply(ctx: any): void {
     const events = (await sq?.readSurface?.(sessionId))?.events ?? []
     const nodeTokens = new Map<number, number>()
     const live = liveSession(sessionId)
-    let systemText: string | null = null
+    let model: { provider: string; model: string } | null = null
     if (live !== undefined) {
       try {
         const m = (ctx.tokenMeter as { measure?: (s: unknown) => { nodes?: { seq: number; tokens: number }[] } } | undefined)?.measure?.(live)
         if (m && Array.isArray(m.nodes)) for (const n of m.nodes) if (typeof n.seq === 'number') nodeTokens.set(n.seq, n.tokens || 0)
       } catch { /* ignore */ }
       try {
-        // The initial system prompt is NOT a surface event: it lives on the
-        // request/header snapshot the agent assembled for the next request.
-        // The live Session folds it incrementally (requestHeader()), so read it
-        // there instead of re-scanning the raw log. This is the "segment 0" the
-        // Trajectory view shows as "Initial System Prompt" via its request/header
-        // definition, and which readSurface() alone cannot see.
-        const header = live.requestHeader?.()
-        if (typeof header?.system === 'string' && header.system.length > 0) systemText = header.system
-      } catch { /* ignore */ }
-    }
-    // Fallback for non-live (historical/persisted) sessions: the live Session
-    // is absent (or had no request/header yet), so read the system prompt from
-    // the latest request/header event in the raw log via readSession.
-    if (systemText === null) {
-      try {
-        const rs = ctx.sessionQuery as { readSession?: (id: string) => Promise<{ events?: Record<string, unknown>[] }> } | undefined
-        const raw = (await rs?.readSession?.(sessionId))?.events ?? []
-        for (let i = raw.length - 1; i >= 0; i--) {
-          const ev = raw[i] as Record<string, unknown> | undefined
-          if (ev?.type !== 'request/header') continue
-          const h = (ev.data as { header?: { system?: string } } | undefined)?.header
-          if (typeof h?.system === 'string' && h.system.length > 0) { systemText = h.system; break }
+        const config = live.requestHeader?.()?.config
+        if (typeof config?.provider === 'string' && typeof config.model === 'string') {
+          model = { provider: config.provider, model: config.model }
         }
       } catch { /* ignore */ }
     }
     const segments: CtmSegment[] = []
-    if (systemText !== null) {
-      // The assembled system prompt ("You are an AI agent…") is recorded once
-      // in request/header (reason 'initial') and re-sent unchanged on every
-      // request — it is NOT re-injected as a new event per turn. So it appears
-      // once, as segment 0, at the top of the system-prompt box. The per-turn
-      // injections (runtime context, skill catalog) are already in the surface
-      // as their own user/message events and repeat per turn on their own.
-      segments.push({
-        id: 'seg-system', seq: -1, messageId: null, turn_index: 0,
-        role: 'system', source: 'system_inject', sourceKind: 'system',
-        content: systemText, reasoning: '', text: systemText, toolCallId: null,
-        token_count: estimateTokens(systemText),
-        cache_status: 'unknown', effectiveness: 'injected', reason: 'system_inject', strongStale: false,
-        created_at: 0, parent_id: null, tags: [],
-        protected: true, edited: false, deleted: false, rolledBack: false,
-        turn: null, step: null, toolCalls: [], blockTypes: ['text'],
-      })
-    }
-    let model: { provider: string; model: string } | null = null
-    let index = segments.length
+    let index = 0
     for (const ev of events) {
       segments.push(segmentFromEvent(ev, index, nodeTokens))
       index++
@@ -361,6 +324,12 @@ export function apply(ctx: any): void {
         const src = (ev.data as { message?: { source?: { provider?: string; model?: string } } } | undefined)?.message?.source
         if (src?.provider && src?.model) model = { provider: src.provider, model: src.model }
       }
+    }
+    // Session V3 promotes the rendered system prompt from request/header.system
+    // to system/message surface nodes. The newest surviving system message is
+    // the effective prompt, so keep CTM's stable logical id for that one node.
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (events[i]?.type === 'system/message') { segments[i]!.id = 'seg-system'; break }
     }
     // `user/message` surface events carry no `turn`/`step` in their data
     // (UserMessage has only id/role/content/source), while `assistant/message`
@@ -441,7 +410,7 @@ export function apply(ctx: any): void {
     // The complete log: the live session's in-memory events, else a
     // readSession() scan (historical sessions — correct but O(log) per read;
     // the projection path above exists precisely to avoid this).
-    let logEvents: readonly UsageEventLike[] | null = live !== undefined ? live.events : null
+    let logEvents: readonly UsageEventLike[] | null = live !== undefined ? live.snapshotEvents() : null
     const fullLog = async (): Promise<readonly UsageEventLike[]> => {
       if (logEvents !== null) return logEvents
       try {
@@ -557,10 +526,8 @@ export function apply(ctx: any): void {
     return best
   }
 
-  function eventBySeq(session: SessionLike, seq: number): SessionLike['events'][number] | undefined {
-    const direct = session.events[seq]
-    if (direct !== undefined && direct.seq === seq) return direct
-    return session.events.find(e => e.seq === seq)
+  function eventBySeq(session: SessionLike, seq: number): ReturnType<SessionLike['eventAt']> {
+    return session.eventAt(seq)
   }
 
   /** The message source a replacement user/message should keep so the node keeps its classification. */
@@ -688,9 +655,9 @@ export function apply(ctx: any): void {
         const seg = findSeg(cur, request.segmentId)
         if (!seg) return { kind: 'error', code: 'segment_not_found' }
         const content = String(request.content ?? '')
-        // The initial system prompt is not a surface event: the edit is stored
-        // as an override that the system-prompt/assemble waterfall swaps in for
-        // the section list. `{{` is rejected because the render pass would
+        // The effective system/message is edited through an assembly override,
+        // which the agent loop then records as the next system/message node.
+        // `{{` is rejected because the render pass would
         // treat it as a variable reference and fail the whole request.
         if (seg.id === 'seg-system') {
           if (content.includes('{{')) return { kind: 'error', code: 'invalid_template' }
@@ -924,8 +891,8 @@ export function apply(ctx: any): void {
 
   // System-prompt layer: a stored override replaces the assembled section list
   // (the user edited the fully rendered prompt, so the override IS the whole
-  // section list). The loop logs a new request/header snapshot on its own when
-  // the rendered system text changes. Waterfall rules: always call next().
+  // section list). The loop logs the rendered text as system/message on its
+  // own. Waterfall rules: always call next().
   ctx.on('system-prompt/assemble', async (_assembly: any, context: any, next: () => Promise<any>) => {
     const result = await next()
     try {
@@ -934,7 +901,7 @@ export function apply(ctx: any): void {
       const st = stores.get(sid)
       if (st === undefined || st.systemOverride === null) return result
       st.systemOverridePending = false
-      st.edits.delete('seg-system') // the next readBase picks the new text up from request/header
+      st.edits.delete('seg-system') // the next readBase picks up the new system/message
       return { ...result, sections: [{ name: 'ctm:override', text: st.systemOverride }] }
     } catch (e) {
       logger.warn('[ctm] failed to apply the system-prompt override:', e instanceof Error ? e.message : String(e))

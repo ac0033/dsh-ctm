@@ -25,6 +25,8 @@ export interface Harness {
   preStep(session: FakeSession): Promise<void>
   /** Open a turn, run pre-step (flushing queued edits into the log), close the turn. */
   flush(session: FakeSession): Promise<void>
+  /** Run the system-prompt/assemble waterfall for one session. */
+  assembleSystemPrompt(session: FakeSession, sections?: unknown[]): Promise<any>
   warnings: string[]
 }
 
@@ -123,5 +125,18 @@ export function createHarness(sessions: FakeSession[], opts?: { cordisGuard?: bo
     session.endTurn()
   }
 
-  return { post, preStep, flush, warnings }
+  async function assembleSystemPrompt(session: FakeSession, sections: unknown[] = []): Promise<any> {
+    const fns = (listeners.get('system-prompt/assemble') ?? []) as unknown as Array<
+      (assembly: any, context: any, next: () => Promise<any>) => Promise<any>
+    >
+    const base = { sections, contexts: [], tools: [], variables: {} }
+    let i = 0
+    const next = async (): Promise<any> => {
+      const fn = fns[i++]
+      return fn === undefined ? base : fn(base, { agent: { session } }, next)
+    }
+    return next()
+  }
+
+  return { post, preStep, flush, assembleSystemPrompt, warnings }
 }

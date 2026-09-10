@@ -22,8 +22,9 @@ export interface SessionEventLike {
 }
 
 export interface SessionLike {
-  events: readonly SessionEventLike[]
   surface: { nodes: readonly number[] }
+  eventAt(seq: number): SessionEventLike | undefined
+  snapshotEvents(): readonly SessionEventLike[]
 }
 
 /** The append call of a live session, structurally typed. */
@@ -107,9 +108,7 @@ export function minimalBalancedRange(session: SessionLike, seq: number): Balance
 
 /** Look up one log event by seq (events are append-ordered, so index === seq in the common case). */
 function eventForSeq(session: SessionLike, seq: number): SessionEventLike | undefined {
-  const direct = session.events[seq]
-  if (direct !== undefined && direct.seq === seq) return direct
-  return session.events.find(e => e.seq === seq)
+  return session.eventAt(seq)
 }
 
 /** Balance of the cut immediately before (`offset 0`) or after (`offset 1`) a current surface seq. */
@@ -150,7 +149,7 @@ export interface AppendPlan {
   type: 'user/message' | 'tool/result'
   data: Record<string, unknown>
   intent: {
-    surfaceOp: 'append' | { op: 'replace'; start: number; end: number }
+    surfaceOp: 'append' | { op: 'replace'; startSeq: number; endSeq: number }
     sourceEventSeqs: number[]
   }
 }
@@ -178,7 +177,7 @@ export function planReplaceUserMessage(session: SessionLike, seq: number, text: 
   return {
     type: 'user/message',
     data: buildUserMessageData(text, source),
-    intent: { surfaceOp: { op: 'replace', start: seq, end: seq }, sourceEventSeqs: [seq] },
+    intent: { surfaceOp: { op: 'replace', startSeq: seq, endSeq: seq }, sourceEventSeqs: [seq] },
   }
 }
 
@@ -202,7 +201,7 @@ export function planRewriteToolResult(session: SessionLike, seq: number, text: s
   return {
     type: 'tool/result',
     data,
-    intent: { surfaceOp: { op: 'replace', start: seq, end: seq }, sourceEventSeqs: [seq] },
+    intent: { surfaceOp: { op: 'replace', startSeq: seq, endSeq: seq }, sourceEventSeqs: [seq] },
   }
 }
 
@@ -219,7 +218,7 @@ export function planDeleteSegment(session: SessionLike, seq: number, marker: str
   return {
     type: 'user/message',
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
-    intent: { surfaceOp: { op: 'replace', start: range.start, end: range.end }, sourceEventSeqs: range.seqs },
+    intent: { surfaceOp: { op: 'replace', startSeq: range.start, endSeq: range.end }, sourceEventSeqs: range.seqs },
   }
 }
 
@@ -246,7 +245,7 @@ export function planRollback(session: SessionLike, startSeq: number, marker: str
     type: 'user/message',
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
     intent: {
-      surfaceOp: { op: 'replace', start, end },
+      surfaceOp: { op: 'replace', startSeq: start, endSeq: end },
       sourceEventSeqs: nodes.slice(startIdx),
     },
   }
@@ -357,7 +356,7 @@ export function planRestore(session: SessionLike, applied: AppliedEdit): AppendP
           type: 'user/message' as const,
           data,
           intent: {
-            surfaceOp: { op: 'replace' as const, start: applied.replacementSeq, end: applied.replacementSeq },
+            surfaceOp: { op: 'replace' as const, startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
             sourceEventSeqs: [applied.replacementSeq, seq],
           },
         }
@@ -395,7 +394,7 @@ export function planUndo(session: SessionLike, applied: AppliedEdit): AppendPlan
       type: 'user/message',
       data: buildUserMessageData(applied.marker ?? '[CTM] The conversation was rolled back by the user.', CTM_PLUGIN_SOURCE),
       intent: {
-        surfaceOp: { op: 'replace', start: restored[0]!, end: restored[restored.length - 1]! },
+        surfaceOp: { op: 'replace', startSeq: restored[0]!, endSeq: restored[restored.length - 1]! },
         sourceEventSeqs: [...restored],
       },
     }
@@ -411,7 +410,7 @@ export function planUndo(session: SessionLike, applied: AppliedEdit): AppendPlan
       type: 'tool/result',
       data,
       intent: {
-        surfaceOp: { op: 'replace', start: applied.replacementSeq, end: applied.replacementSeq },
+        surfaceOp: { op: 'replace', startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
         sourceEventSeqs: [applied.replacementSeq],
       },
     }
@@ -422,7 +421,7 @@ export function planUndo(session: SessionLike, applied: AppliedEdit): AppendPlan
     type: 'user/message',
     data: { ...structuredClone(original.data), id: messageId() },
     intent: {
-      surfaceOp: { op: 'replace', start: applied.replacementSeq, end: applied.replacementSeq },
+      surfaceOp: { op: 'replace', startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
       sourceEventSeqs: [applied.replacementSeq],
     },
   }

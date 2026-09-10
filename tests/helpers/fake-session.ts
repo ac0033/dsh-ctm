@@ -9,7 +9,7 @@
  * transcribed from those two modules, not simplified from intuition.
  */
 
-export interface FakeSurfaceOpReplace { op: 'replace'; start: number; end: number }
+export interface FakeSurfaceOpReplace { op: 'replace'; startSeq: number; endSeq: number }
 export type FakeSurfaceOp = 'append' | FakeSurfaceOpReplace
 
 export interface FakeEvent {
@@ -25,7 +25,7 @@ export interface FakeAppendIntent {
   sourceEventSeqs?: number[]
 }
 
-const SURFACE_EVENT_TYPES = new Set<string>(['user/message', 'assistant/message', 'tool/result'])
+const SURFACE_EVENT_TYPES = new Set<string>(['system/message', 'user/message', 'assistant/message', 'tool/result'])
 
 function isEventSeq(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
@@ -61,6 +61,16 @@ export class FakeSession {
   /** Live surface view, same shape the real SessionSurface exposes. */
   get surface(): { nodes: readonly number[] } {
     return { nodes: this.nodeSeqs }
+  }
+
+  /** Immutable-style log snapshot exposed by Session V3. */
+  snapshotEvents(): readonly FakeEvent[] {
+    return [...this.events]
+  }
+
+  /** Positional event lookup exposed by Session V3. */
+  eventAt(seq: number): FakeEvent | undefined {
+    return this.events[seq]
   }
 
   /** Test sugar: open the next turn (the flush window edits land in). */
@@ -134,7 +144,7 @@ export class FakeSession {
         this.nextStep += 1
         break
       }
-      case 'assistant/chunk':
+      case 'assistant/attempt':
       case 'assistant/message': {
         requireOpenStep(event.type, d.turn, d.step)
         break
@@ -157,6 +167,9 @@ export class FakeSession {
         this.pendingCalls.delete(callId)
         break
       }
+      case 'system/message':
+        requireOpenStep('system/message', d.turn, d.step)
+        break
       case 'user/message':
         break
       default:
@@ -184,15 +197,15 @@ export class FakeSession {
       this.nodeSeqs.push(event.seq)
       return
     }
-    if (typeof op !== 'object' || op === null || op.op !== 'replace' || !isEventSeq(op.start) || !isEventSeq(op.end)) {
+    if (typeof op !== 'object' || op === null || op.op !== 'replace' || !isEventSeq(op.startSeq) || !isEventSeq(op.endSeq)) {
       throw new Error(`session event "${event.type}" carries an invalid replace surfaceOp`)
     }
-    const startIdx = this.nodeSeqs.indexOf(op.start)
-    if (startIdx === -1) throw new Error(`surface replace: start seq ${op.start} not found in surface`)
-    const endIdx = this.nodeSeqs.indexOf(op.end)
-    if (endIdx === -1) throw new Error(`surface replace: end seq ${op.end} not found in surface`)
+    const startIdx = this.nodeSeqs.indexOf(op.startSeq)
+    if (startIdx === -1) throw new Error(`surface replace: start seq ${op.startSeq} not found in surface`)
+    const endIdx = this.nodeSeqs.indexOf(op.endSeq)
+    if (endIdx === -1) throw new Error(`surface replace: end seq ${op.endSeq} not found in surface`)
     if (startIdx > endIdx) {
-      throw new Error(`surface replace: start seq ${op.start} (index ${startIdx}) is after end seq ${op.end} (index ${endIdx})`)
+      throw new Error(`surface replace: start seq ${op.startSeq} (index ${startIdx}) is after end seq ${op.endSeq} (index ${endIdx})`)
     }
     const shadowedSeqs = this.nodeSeqs.slice(startIdx, endIdx + 1)
     this.assertProvenance(event, shadowedSeqs)
@@ -232,7 +245,7 @@ export class FakeSession {
     if (shadowedSeqs.length !== 1) {
       throw new Error('tool/result surface replacement must rewrite exactly one current node')
     }
-    const original = this.events[shadowedSeqs[0]!]
+    const original = this.eventAt(shadowedSeqs[0]!)
     if (original?.type !== 'tool/result') {
       throw new Error('tool/result surface replacement must target a current tool/result')
     }
@@ -245,11 +258,12 @@ export class FakeSession {
     }
   }
 
-  /** surface.ts deriveEventMessage: null for non-surface events and empty-content assistant messages. */
+  /** surface.ts deriveEventMessage: null for non-surface events and empty-content system/assistant messages. */
   private deriveEventMessage(event: FakeEvent): any | null {
     switch (event.type) {
       case 'user/message':
         return event.data
+      case 'system/message':
       case 'assistant/message':
         if (event.data.message.content.length === 0) return null
         return event.data.message
@@ -264,7 +278,7 @@ export class FakeSession {
   deriveMessages(): any[] {
     const out: any[] = []
     for (const seq of this.nodeSeqs) {
-      const msg = this.deriveEventMessage(this.events[seq]!)
+      const msg = this.deriveEventMessage(this.eventAt(seq)!)
       if (msg !== null) out.push(msg)
     }
     return out

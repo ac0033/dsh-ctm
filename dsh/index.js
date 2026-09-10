@@ -14792,9 +14792,7 @@ function minimalBalancedRange(session, seq) {
   return { start: nodes[s], end: nodes[e], seqs: nodes.slice(s, e + 1) };
 }
 function eventForSeq(session, seq) {
-  const direct = session.events[seq];
-  if (direct !== void 0 && direct.seq === seq) return direct;
-  return session.events.find((e) => e.seq === seq);
+  return session.eventAt(seq);
 }
 function cutBalanced(session, seq, offset) {
   let inProgressToolCalls = 0;
@@ -14834,7 +14832,7 @@ function planReplaceUserMessage(session, seq, text, source) {
   return {
     type: "user/message",
     data: buildUserMessageData(text, source),
-    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+    intent: { surfaceOp: { op: "replace", startSeq: seq, endSeq: seq }, sourceEventSeqs: [seq] }
   };
 }
 function planRewriteToolResult(session, seq, text) {
@@ -14848,7 +14846,7 @@ function planRewriteToolResult(session, seq, text) {
   return {
     type: "tool/result",
     data,
-    intent: { surfaceOp: { op: "replace", start: seq, end: seq }, sourceEventSeqs: [seq] }
+    intent: { surfaceOp: { op: "replace", startSeq: seq, endSeq: seq }, sourceEventSeqs: [seq] }
   };
 }
 function planDeleteSegment(session, seq, marker) {
@@ -14856,7 +14854,7 @@ function planDeleteSegment(session, seq, marker) {
   return {
     type: "user/message",
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
-    intent: { surfaceOp: { op: "replace", start: range.start, end: range.end }, sourceEventSeqs: range.seqs }
+    intent: { surfaceOp: { op: "replace", startSeq: range.start, endSeq: range.end }, sourceEventSeqs: range.seqs }
   };
 }
 function planRollback(session, startSeq, marker) {
@@ -14876,7 +14874,7 @@ function planRollback(session, startSeq, marker) {
     type: "user/message",
     data: buildUserMessageData(marker, CTM_PLUGIN_SOURCE),
     intent: {
-      surfaceOp: { op: "replace", start, end },
+      surfaceOp: { op: "replace", startSeq: start, endSeq: end },
       sourceEventSeqs: nodes.slice(startIdx)
     }
   };
@@ -14932,7 +14930,7 @@ function planRestore(session, applied) {
       type: "user/message",
       data,
       intent: {
-        surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+        surfaceOp: { op: "replace", startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
         sourceEventSeqs: [applied.replacementSeq, seq]
       }
     } : {
@@ -14956,7 +14954,7 @@ function planUndo(session, applied) {
       type: "user/message",
       data: buildUserMessageData(applied.marker ?? "[CTM] The conversation was rolled back by the user.", CTM_PLUGIN_SOURCE),
       intent: {
-        surfaceOp: { op: "replace", start: restored[0], end: restored[restored.length - 1] },
+        surfaceOp: { op: "replace", startSeq: restored[0], endSeq: restored[restored.length - 1] },
         sourceEventSeqs: [...restored]
       }
     };
@@ -14972,7 +14970,7 @@ function planUndo(session, applied) {
       type: "tool/result",
       data,
       intent: {
-        surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+        surfaceOp: { op: "replace", startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
         sourceEventSeqs: [applied.replacementSeq]
       }
     };
@@ -14983,7 +14981,7 @@ function planUndo(session, applied) {
     type: "user/message",
     data: { ...structuredClone(original.data), id: messageId() },
     intent: {
-      surfaceOp: { op: "replace", start: applied.replacementSeq, end: applied.replacementSeq },
+      surfaceOp: { op: "replace", startSeq: applied.replacementSeq, endSeq: applied.replacementSeq },
       sourceEventSeqs: [applied.replacementSeq]
     }
   };
@@ -15201,7 +15199,11 @@ function apply(ctx) {
     let role;
     let source;
     let prot = false;
-    if (ev.type === "user/message") {
+    if (ev.type === "system/message") {
+      role = "system";
+      source = "system_inject";
+      prot = true;
+    } else if (ev.type === "user/message") {
       const src = d.source;
       if (src?.kind === "plugin" && src?.plugin === "ctm") {
         role = "user";
@@ -15264,7 +15266,7 @@ function apply(ctx) {
       turn_index: index,
       role,
       source,
-      sourceKind: d.source?.kind ?? null,
+      sourceKind: (d.source ?? msg.source)?.kind ?? null,
       content,
       reasoning,
       text: prose,
@@ -15293,7 +15295,7 @@ function apply(ctx) {
     const events = (await sq?.readSurface?.(sessionId))?.events ?? [];
     const nodeTokens = /* @__PURE__ */ new Map();
     const live = liveSession(sessionId);
-    let systemText = null;
+    let model = null;
     if (live !== void 0) {
       try {
         const m = ctx.tokenMeter?.measure?.(live);
@@ -15303,67 +15305,27 @@ function apply(ctx) {
       } catch {
       }
       try {
-        const header = live.requestHeader?.();
-        if (typeof header?.system === "string" && header.system.length > 0) systemText = header.system;
-      } catch {
-      }
-    }
-    if (systemText === null) {
-      try {
-        const rs = ctx.sessionQuery;
-        const raw = (await rs?.readSession?.(sessionId))?.events ?? [];
-        for (let i = raw.length - 1; i >= 0; i--) {
-          const ev = raw[i];
-          if (ev?.type !== "request/header") continue;
-          const h = ev.data?.header;
-          if (typeof h?.system === "string" && h.system.length > 0) {
-            systemText = h.system;
-            break;
-          }
+        const config2 = live.requestHeader?.()?.config;
+        if (typeof config2?.provider === "string" && typeof config2.model === "string") {
+          model = { provider: config2.provider, model: config2.model };
         }
       } catch {
       }
     }
     const segments = [];
-    if (systemText !== null) {
-      segments.push({
-        id: "seg-system",
-        seq: -1,
-        messageId: null,
-        turn_index: 0,
-        role: "system",
-        source: "system_inject",
-        sourceKind: "system",
-        content: systemText,
-        reasoning: "",
-        text: systemText,
-        toolCallId: null,
-        token_count: estimateTokens(systemText),
-        cache_status: "unknown",
-        effectiveness: "injected",
-        reason: "system_inject",
-        strongStale: false,
-        created_at: 0,
-        parent_id: null,
-        tags: [],
-        protected: true,
-        edited: false,
-        deleted: false,
-        rolledBack: false,
-        turn: null,
-        step: null,
-        toolCalls: [],
-        blockTypes: ["text"]
-      });
-    }
-    let model = null;
-    let index = segments.length;
+    let index = 0;
     for (const ev of events) {
       segments.push(segmentFromEvent(ev, index, nodeTokens));
       index++;
       if (ev.type === "assistant/message") {
         const src = ev.data?.message?.source;
         if (src?.provider && src?.model) model = { provider: src.provider, model: src.model };
+      }
+    }
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (events[i]?.type === "system/message") {
+        segments[i].id = "seg-system";
+        break;
       }
     }
     {
@@ -15423,7 +15385,7 @@ function apply(ctx) {
       } catch {
       }
     }
-    let logEvents = live !== void 0 ? live.events : null;
+    let logEvents = live !== void 0 ? live.snapshotEvents() : null;
     const fullLog = async () => {
       if (logEvents !== null) return logEvents;
       try {
@@ -15539,9 +15501,7 @@ function apply(ctx) {
     return best;
   }
   function eventBySeq(session, seq) {
-    const direct = session.events[seq];
-    if (direct !== void 0 && direct.seq === seq) return direct;
-    return session.events.find((e) => e.seq === seq);
+    return session.eventAt(seq);
   }
   function replacementSource(session, seg) {
     if (seg.role === "assistant") return { kind: "user" };

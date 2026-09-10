@@ -111,6 +111,41 @@ function logRetains(s: FakeSession, text: string): boolean {
 // Scenarios.
 // ---------------------------------------------------------------------------
 
+describe('integration: Session V3 system prompt surface node', () => {
+  it('exposes the effective system/message as protected and overrides it through assembly', async () => {
+    const s = new FakeSession('s1')
+    s.append('turn/start', { turn: 1 })
+    s.append('user/message', userMsgData('hello'), { surfaceOp: 'append' })
+    s.append('step/start', { turn: 1, step: 1 })
+    s.append('system/message', {
+      turn: 1,
+      step: 1,
+      message: {
+        id: 'system-1',
+        role: 'system',
+        content: [{ type: 'text', text: 'original system prompt' }],
+        source: { kind: 'plugin', plugin: '@deepseek-ai/dsh-system-prompt' },
+      },
+    }, { surfaceOp: 'append' })
+    s.append('assistant/message', assistantData(1, 1, 'answer'), { surfaceOp: 'append' })
+    s.append('step/end', { turn: 1, step: 1 })
+    s.append('turn/end', { turn: 1 })
+
+    const h = createHarness([s])
+    const before = await stateOf(h, 's1')
+    const system = findSeg(before, seg => seg.id === 'seg-system')
+    expect(system).toMatchObject({ role: 'system', source: 'system_inject', protected: true, content: 'original system prompt' })
+    expect(await noticeOf(h, { op: 'delete', sessionId: 's1', segmentId: system.id }))
+      .toEqual({ kind: 'error', code: 'cannot_delete_system' })
+
+    await h.post({ op: 'setRealtime', sessionId: 's1', enabled: true })
+    expect(await noticeOf(h, { op: 'replace', sessionId: 's1', segmentId: system.id, content: 'updated system prompt' }))
+      .toEqual({ kind: 'ok', code: 'replaced_system' })
+    const assembly = await h.assembleSystemPrompt(s, [{ name: 'base', text: 'original system prompt' }])
+    expect(assembly.sections).toEqual([{ name: 'ctm:override', text: 'updated system prompt' }])
+  })
+})
+
 describe('integration: realtime ON replace of a user segment', () => {
   it('lands in deriveMessages at the same position after pre-step; undo restores the original', async () => {
     const s = new FakeSession('s1')
