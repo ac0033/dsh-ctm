@@ -1,6 +1,6 @@
 # Harness compatibility
 
-Target: official `dsh-v0.1.5-rc.2`, commit `fb2c4b9e698e30edb738bca4cf0618587db7d203`. This is an upstream release candidate. See [upgrade status](upgrade-status.md) for actual evidence; planned work is not a compatibility claim.
+Target: official `dsh-v0.1.5-rc.2`, commit `fb2c4b9e698e30edb738bca4cf0618587db7d203`. This is an upstream release candidate. Planned work in the table below is not a compatibility claim.
 
 | Capability | Official integration | Planned CTM change |
 |---|---|---|
