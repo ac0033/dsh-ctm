@@ -18,6 +18,7 @@ Old development tags remain aliases. New SemVer tags point to the same commits; 
 | v11 | v1.0.0-rc.1 | Public package name and installation preparation |
 | v12 | v1.0.0 (existing) | First public release |
 | v13 | v1.0.1 | Session V3 compatibility fix |
+| — | v1.0.2 | dsh 0.1.7 conversation-hook compatibility; first npm release |
 
 The 0.x series names pre-public development snapshots, not stable API promises. Do not manufacture formal releases for each snapshot. Preserve v1.0.0's identity and original contents. Planned feature release: v1.1.0, preceded by v1.1.0-rc.1; neither is published merely because this document exists.
 

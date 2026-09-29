@@ -63,11 +63,14 @@ The bundled client does not currently send `expectedVersion`; the host check is 
 ## Install / uninstall
 
 ```sh
-# Install from GitHub (pinning a tag is safer; on first install pnpm will ask you
-# to add the package to allowBuilds in the profile's pnpm-workspace.yaml — git
-# installs pull source only, and the package's prepare script builds it at install time)
-dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.0
+# Install the prebuilt package from npm (desktop app: Plugins → Add plugin → enter dsh-ctm)
+dsh plugin --profile <name> add dsh-ctm
 dsh plugin --profile <name> remove dsh-ctm
+
+# Or install from GitHub: git installs pull source only, so the package's prepare
+# script builds it at install time. On first install pnpm refuses to run it until
+# you add the key it prints to allowBuilds in the profile's pnpm-workspace.yaml.
+dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.2
 ```
 
 `add` automatically writes the package into the profile's `dependencies` + `dsh.profile.bundles` (because it declares `dsh.bundle`) — no manual `cordis.patch.yml` edits; `remove` cleans up the dependency, the bundle layer and node_modules together.

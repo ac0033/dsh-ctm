@@ -63,10 +63,13 @@ src/
 ## 安装 / 卸载
 
 ```powershell
-# 从 GitHub 安装（锁定 tag 更稳妥；首次安装需在 profile 的 pnpm-workspace.yaml 里
-# 按 pnpm 提示加 allowBuilds 授权——git 安装只拉源码，包的 prepare 脚本会在安装时完成构建）
-dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.0
+# 从 npm 安装预构建包（桌面版：插件 → 添加插件 → 输入 dsh-ctm）
+dsh plugin --profile <name> add dsh-ctm
 dsh plugin --profile <name> remove dsh-ctm
+
+# 或从 GitHub 安装：git 安装只拉源码，包的 prepare 脚本会在安装时完成构建。
+# 首次安装 pnpm 会拒绝运行它，需把它打印的包键加进 profile 的 pnpm-workspace.yaml 的 allowBuilds
+dsh plugin --profile <name> add github:ac0033/dsh-ctm#v1.0.2
 ```
 
 `add` 自动把包写进 profile 的 `dependencies` + `dsh.profile.bundles`（因为它声明了 `dsh.bundle`），无需手改 `cordis.patch.yml`；`remove` 一并清掉依赖、bundle 层与 node_modules。

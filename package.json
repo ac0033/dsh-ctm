@@ -1,6 +1,6 @@
 {
   "name": "dsh-ctm",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Context Transparency Manager: the model context as a visible, editable, effectiveness-scored surface (self-contained dsh bundle plugin)",
   "type": "module",
   "license": "MIT",
