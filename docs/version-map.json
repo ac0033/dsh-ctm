@@ -1,0 +1,72 @@
+[
+  {
+    "old": "v0",
+    "semver": "v0.1.0",
+    "commit": "1840662643024a8e4789866fb2717f34a4668118"
+  },
+  {
+    "old": "v1",
+    "semver": "v0.2.0",
+    "commit": "8ac1c6bf6d0596840141e428515b81020430839d"
+  },
+  {
+    "old": "v2",
+    "semver": "v0.3.0",
+    "commit": "b70df9b973b8efefb4c5dd1b41eed28a023a715a"
+  },
+  {
+    "old": "v3",
+    "semver": "v0.4.0",
+    "commit": "3613949c29bf551f9a4a88775bad360aea062129"
+  },
+  {
+    "old": "v4",
+    "semver": "v0.4.1",
+    "commit": "65bf1fb42960e1d7c4e06044a928f7be5f67d561"
+  },
+  {
+    "old": "v5",
+    "semver": "v0.5.0",
+    "commit": "cebae0533705f5f886ad692812fb39ec7632c1db"
+  },
+  {
+    "old": "v6",
+    "semver": "v0.5.1",
+    "commit": "3ca67027609c46654265ab400f265bb64200ae40"
+  },
+  {
+    "old": "v7",
+    "semver": "v0.5.2",
+    "commit": "346b57256bddc94ed38213e53f7b3f36b8dcd6f8"
+  },
+  {
+    "old": "v8",
+    "semver": "v0.5.3",
+    "commit": "b5ebee60761c1cc31695412a7bde5548e0baefef"
+  },
+  {
+    "old": "v9",
+    "semver": "v0.6.0",
+    "commit": "f2aaed3751c107a6cdfe46e13c1c8e0d40c4a2b9"
+  },
+  {
+    "old": "v10",
+    "semver": "v0.6.1",
+    "commit": "19746f9e33af6c7c667f949fcf9043043c3b5691"
+  },
+  {
+    "old": "v11",
+    "semver": "v1.0.0-rc.1",
+    "commit": "c387ace08e64f0c4d437028ef30e68a1f3a44fb1"
+  },
+  {
+    "old": "v12",
+    "semver": "v1.0.0",
+    "commit": "2b25a7eaf6b2321324842eaabca787e083586d83"
+  },
+  {
+    "old": "v13",
+    "semver": "v1.0.1",
+    "commit": "888cf78574b36a9eb582f2173bed0d1cf9266911"
+  }
+]

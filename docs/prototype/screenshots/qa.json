@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "scope": "simulated design prototype only",
+  "scenarios": [
+    "light/dark",
+    "source filter",
+    "search and empty state",
+    "edit preview and simulated queue",
+    "historical diff",
+    "simulated fork dialog",
+    "390px viewport"
+  ],
+  "pageErrors": []
+}
