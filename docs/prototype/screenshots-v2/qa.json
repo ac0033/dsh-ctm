@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "scope": "simulated progressive-disclosure prototype",
+  "scenarios": [
+    "three collapsed groups by default",
+    "no initial inspector or empty queue",
+    "edit-preview-back preserves draft",
+    "queue only appears after confirmation",
+    "changes and historical comparison",
+    "simulated fork",
+    "search and source filter",
+    "dark/light",
+    "390px no overflow",
+    "Escape closes dialog"
+  ],
+  "pageErrors": []
+}

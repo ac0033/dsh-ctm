@@ -32,11 +32,16 @@ export interface CtmApi {
 const PAGE_SIZE = 2
 
 // Module-level cache so re-opening the tab renders instantly (no loading flash);
-// reactive useSession signals and manual refresh keep it fresh while open.
+// reactive conversation signals and manual refresh keep it fresh while open.
 const stateCache = new Map<string, CtmState>()
 
-export function CtmView(props: CtmApi & { sessionId?: string; useSession?: (sel: (s: any) => any) => any }) {
-  const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession } = props
+type SelectorHook = (sel: (s: any) => any) => any
+
+/** Chat target's legacy slice inside a dsh ≥0.1.7 ConversationSnapshot. */
+const chatSlice = (s: any) => s?.views?.get?.('chat')?.legacy
+
+export function CtmView(props: CtmApi & { sessionId?: string; useSession?: SelectorHook; useConversation?: SelectorHook }) {
+  const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession, useConversation } = props
 
   const [lang, setLang] = useState<Lang>('en')
   const [state, setState] = useState<CtmState | null>(null)
@@ -64,13 +69,18 @@ export function CtmView(props: CtmApi & { sessionId?: string; useSession?: (sel:
   const [showRolledBack, setShowRolledBack] = useState(false)
   const [minimized, setMinimized] = useState(false)
 
-  // Reactive conversation signals supplied by the framework (the same
-  // SnapshotSelectorHook the Trajectory view reads via useSession). `nodeCount`
-  // bumps on every newly finalized surface node (user input, injected context,
+  // Reactive conversation signals supplied by the framework. `nodeCount` bumps
+  // on every newly finalized surface node (user input, injected context,
   // assistant message, tool result) and `running` flips at turn boundaries —
   // both advance the model surface that the host re-reads on getState. React
   // re-renders on each change, so we re-read immediately instead of polling.
-  const nodeCount = useSession ? useSession((s: any) => s?.chat?.legacy?.nodes?.length ?? 0) : 0
+  // dsh ≥0.1.7 moved the Chat slice from the Session snapshot (s.chat) to
+  // `useConversation` (views.get('chat')); older hosts omit that hook. The
+  // branch depends only on which hooks the host supplies, so hook order is
+  // stable for the lifetime of the view.
+  const nodeCount = useConversation
+    ? useConversation((s: any) => chatSlice(s)?.nodes?.length ?? 0)
+    : useSession ? useSession((s: any) => s?.chat?.legacy?.nodes?.length ?? 0) : 0
   const running = useSession ? useSession((s: any) => !!s?.running) : false
 
   const dict = lang === 'zh' ? zh : en

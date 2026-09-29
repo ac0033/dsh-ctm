@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "scope": "classified simulated prototype",
+  "checks": [
+    "existing user/system/turn structure",
+    "eight unique entries",
+    "class internal order",
+    "independent collapse",
+    "full text and code expansion",
+    "ordered mode retains original sequence",
+    "code search and scope",
+    "edit preview queue",
+    "dark/light/mobile"
+  ],
+  "pageErrors": []
+}
