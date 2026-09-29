@@ -1090,8 +1090,9 @@ function Editor({ sh }) {
 var import_jsx_runtime7 = require("react/jsx-runtime");
 var PAGE_SIZE = 2;
 var stateCache = /* @__PURE__ */ new Map();
+var chatSlice = (s) => s?.views?.get?.("chat")?.legacy;
 function CtmView(props) {
-  const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession } = props;
+  const { getState, replace, deleteSegment, rollback, restore, reset, undo, override, setRealtime, sessionId, useSession, useConversation } = props;
   const [lang, setLang] = (0, import_react3.useState)("en");
   const [state, setState] = (0, import_react3.useState)(null);
   const [loading, setLoading] = (0, import_react3.useState)(true);
@@ -1114,7 +1115,7 @@ function CtmView(props) {
   }, [editing]);
   const [showRolledBack, setShowRolledBack] = (0, import_react3.useState)(false);
   const [minimized, setMinimized] = (0, import_react3.useState)(false);
-  const nodeCount = useSession ? useSession((s) => s?.chat?.legacy?.nodes?.length ?? 0) : 0;
+  const nodeCount = useConversation ? useConversation((s) => chatSlice(s)?.nodes?.length ?? 0) : useSession ? useSession((s) => s?.chat?.legacy?.nodes?.length ?? 0) : 0;
   const running = useSession ? useSession((s) => !!s?.running) : false;
   const dict = lang === "zh" ? zh : en;
   const t = (0, import_react3.useCallback)((k) => dict[k] ?? en[k] ?? k, [dict]);
